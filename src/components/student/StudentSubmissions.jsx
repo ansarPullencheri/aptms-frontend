@@ -4,7 +4,7 @@ import API from '../../api/axios';
 import {
   Container, Paper, Typography, Box, CircularProgress, Avatar, Chip, List,
   ListItemButton, ListItemIcon, ListItemText, Divider, IconButton, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow,
+  TableContainer, TableHead, TableRow, TablePagination,
 } from '@mui/material';
 import {
   Assignment, CheckCircle, School, Dashboard as DashboardIcon, Menu as MenuIcon, Close,
@@ -20,6 +20,11 @@ const StudentSubmissions = () => {
   const [error, setError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('submissions');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const navItems = [
@@ -28,7 +33,9 @@ const StudentSubmissions = () => {
     { id: 'submissions', label: 'Submissions', icon: CheckCircle, path: '/student/submissions' },
   ];
 
-  useEffect(() => { fetchSubmissions(); }, []);
+  useEffect(() => { 
+    fetchSubmissions(); 
+  }, []);
 
   const fetchSubmissions = async () => {
     try {
@@ -41,6 +48,22 @@ const StudentSubmissions = () => {
       setLoading(false);
     }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedSubmissions = submissions.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const getStatusChip = (submission) => {
     if (submission.marks_obtained !== null && submission.marks_obtained !== undefined) {
@@ -182,6 +205,7 @@ const StudentSubmissions = () => {
               </Box>
             </Box>
           </Paper>
+          
           <Paper elevation={0} sx={{
             borderRadius: 3,
             overflow: 'hidden',
@@ -226,7 +250,7 @@ const StudentSubmissions = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    submissions.map((submission) => {
+                    paginatedSubmissions.map((submission) => {
                       const taskTitle = submission.task?.title || submission.task_title || 'N/A';
                       const courseName = submission.task?.course?.name || submission.course_name || 'N/A';
                       const maxMarks = submission.task?.max_marks || submission.max_marks || 100;
@@ -310,6 +334,26 @@ const StudentSubmissions = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            {submissions.length > 0 && (
+              <TablePagination
+                component="div"
+                count={submissions.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
         </Container>
       </Box>

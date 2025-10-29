@@ -5,7 +5,7 @@ import {
   Container, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
   Chip, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
   InputLabel, Select, MenuItem, Grid, Checkbox, ListItemText, Avatar, List, ListItemButton,
-  ListItemIcon, Divider, Badge, IconButton, Tooltip,
+  ListItemIcon, Divider, Badge, IconButton, Tooltip, TablePagination,
 } from '@mui/material';
 import {
   CheckCircle, Cancel, Person, School, People, Assignment, Task, PersonAdd, Dashboard as DashboardIcon,
@@ -25,6 +25,11 @@ const StudentApproval = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('approvals');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
   const [assignmentData, setAssignmentData] = useState({ course_id: '', batch_ids: [] });
 
@@ -72,6 +77,22 @@ const StudentApproval = () => {
       setBatches([]);
     }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedStudents = students.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const handleOpenApprovalDialog = (student) => {
     setSelectedStudent(student);
@@ -269,8 +290,8 @@ const StudentApproval = () => {
               borderRadius: 3, overflow: 'hidden',
               border: `1.5px solid ${LIGHT_BLUE}`,
             }}>
-              <TableContainer sx={{ maxHeight: 600 }}>
-                <Table stickyHeader>
+              <TableContainer>
+                <Table>
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Student</TableCell>
@@ -281,7 +302,7 @@ const StudentApproval = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {students.map((student) => (
+                    {paginatedStudents.map((student) => (
                       <TableRow
                         key={student.id}
                         sx={{
@@ -386,6 +407,24 @@ const StudentApproval = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+
+              {/* ✅ Pagination Component */}
+              <TablePagination
+                component="div"
+                count={students.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
             </Paper>
           )}
         </Container>

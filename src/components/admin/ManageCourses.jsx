@@ -6,7 +6,7 @@ import {
   TextField, Grid, Box, Select, MenuItem, FormControl, InputLabel, Alert,
   IconButton, Avatar, List, ListItemButton, ListItemIcon, ListItemText,
   Divider, Badge, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, Tooltip
+  Chip, Tooltip, TablePagination
 } from '@mui/material';
 import {
   Add, Edit, Delete, PersonAdd, School, Timer, Dashboard as DashboardIcon,
@@ -25,7 +25,13 @@ const ManageCourses = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('courses');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -62,6 +68,22 @@ const ManageCourses = () => {
       setMentors(response.data);
     } catch (error) { }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedCourses = courses.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const handleOpenDialog = (course = null) => {
     if (course) {
@@ -343,7 +365,7 @@ const ManageCourses = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    courses.map((course) => (
+                    paginatedCourses.map((course) => (
                       <TableRow
                         key={course.id}
                         sx={{
@@ -481,6 +503,26 @@ const ManageCourses = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            {courses.length > 0 && (
+              <TablePagination
+                component="div"
+                count={courses.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
         </Container>
       </Box>

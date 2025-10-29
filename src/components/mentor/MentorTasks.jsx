@@ -4,7 +4,7 @@ import API from '../../api/axios';
 import {
   Box, Container, Typography, Button, Chip, Paper, IconButton, List, ListItemButton, ListItemIcon,
   ListItemText, Divider, Avatar, CircularProgress, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow,
+  TableContainer, TableHead, TableRow, TablePagination
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, Group, Assignment, GradeOutlined, Menu as MenuIcon, Close,
@@ -19,6 +19,11 @@ const MentorTasks = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('tasks');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const navItems = [
@@ -36,6 +41,22 @@ const MentorTasks = () => {
       setTasks(response.data.tasks || []);
     } catch (error) { } finally { setLoading(false); }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedTasks = tasks.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const isOverdue = (dueDate) => new Date(dueDate) < new Date();
 
@@ -242,7 +263,7 @@ const MentorTasks = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    tasks.map((task) => (
+                    paginatedTasks.map((task) => (
                       <TableRow
                         key={task.id}
                         hover
@@ -390,6 +411,26 @@ const MentorTasks = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            {tasks.length > 0 && (
+              <TablePagination
+                component="div"
+                count={tasks.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
         </Container>
       </Box>

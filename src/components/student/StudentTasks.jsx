@@ -4,7 +4,7 @@ import API from '../../api/axios';
 import {
   Container, Paper, Typography, Box, CircularProgress, Avatar, Chip, List,
   ListItemButton, ListItemIcon, ListItemText, Divider, IconButton, Button, Alert, Tab, Tabs,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, TablePagination,
 } from '@mui/material';
 import {
   Assignment, CheckCircle, PendingActions, School, Dashboard as DashboardIcon, Menu as MenuIcon, Close,
@@ -31,6 +31,15 @@ const StudentTasks = () => {
   const [error, setError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('tasks');
+  
+  // ✅ Pagination state for each tab
+  const [allTasksPage, setAllTasksPage] = useState(0);
+  const [allTasksRowsPerPage, setAllTasksRowsPerPage] = useState(10);
+  const [pendingPage, setPendingPage] = useState(0);
+  const [pendingRowsPerPage, setPendingRowsPerPage] = useState(10);
+  const [submissionsPage, setSubmissionsPage] = useState(0);
+  const [submissionsRowsPerPage, setSubmissionsRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const navItems = [
@@ -58,6 +67,52 @@ const StudentTasks = () => {
   };
 
   const handleTabChange = (event, newValue) => setTabValue(newValue);
+
+  // ✅ Pagination handlers for All Tasks tab
+  const handleAllTasksChangePage = (event, newPage) => {
+    setAllTasksPage(newPage);
+  };
+
+  const handleAllTasksChangeRowsPerPage = (event) => {
+    setAllTasksRowsPerPage(parseInt(event.target.value, 10));
+    setAllTasksPage(0);
+  };
+
+  // ✅ Pagination handlers for Pending tab
+  const handlePendingChangePage = (event, newPage) => {
+    setPendingPage(newPage);
+  };
+
+  const handlePendingChangeRowsPerPage = (event) => {
+    setPendingRowsPerPage(parseInt(event.target.value, 10));
+    setPendingPage(0);
+  };
+
+  // ✅ Pagination handlers for Submissions tab
+  const handleSubmissionsChangePage = (event, newPage) => {
+    setSubmissionsPage(newPage);
+  };
+
+  const handleSubmissionsChangeRowsPerPage = (event) => {
+    setSubmissionsRowsPerPage(parseInt(event.target.value, 10));
+    setSubmissionsPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedAllTasks = allTasks.slice(
+    allTasksPage * allTasksRowsPerPage,
+    allTasksPage * allTasksRowsPerPage + allTasksRowsPerPage
+  );
+
+  const paginatedPendingTasks = pendingTasks.slice(
+    pendingPage * pendingRowsPerPage,
+    pendingPage * pendingRowsPerPage + pendingRowsPerPage
+  );
+
+  const paginatedSubmissions = submissions.slice(
+    submissionsPage * submissionsRowsPerPage,
+    submissionsPage * submissionsRowsPerPage + submissionsRowsPerPage
+  );
 
   const getStatusChip = (task) => {
     if (task.is_locked) {
@@ -242,144 +297,164 @@ const StudentTasks = () => {
                     </Typography>
                   </Box>
                 ) : (
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Details</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Due Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Max Marks</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: BLUE }}>Action</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {allTasks.map((task) => {
-                          const isSubmitted = task.is_submitted || submissions.some(sub => sub.task.id === task.id);
-                          const dueDate = new Date(task.due_date);
-                          const now = new Date();
-                          const isOverdue = dueDate < now;
-                          const isLocked = task.is_locked;
+                  <>
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Details</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Due Date</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Max Marks</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 700, color: BLUE }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {paginatedAllTasks.map((task) => {
+                            const isSubmitted = task.is_submitted || submissions.some(sub => sub.task.id === task.id);
+                            const dueDate = new Date(task.due_date);
+                            const now = new Date();
+                            const isOverdue = dueDate < now;
+                            const isLocked = task.is_locked;
 
-                          return (
-                            <TableRow
-                              key={task.id}
-                              sx={{
-                                '&:hover': { bgcolor: LIGHT_BLUE },
-                                opacity: isLocked ? 0.6 : 1,
-                              }}
-                            >
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  {isLocked && <Lock sx={{ fontSize: 18, color: "#D84315" }} />}
-                                  <Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
-                                      {task.title}
-                                    </Typography>
-                                    {task.week_number && (
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                                        <ScheduleIcon sx={{ fontSize: 14, color: BLUE }} />
-                                        <Typography variant="caption" color={BLUE}>
-                                          Week {task.week_number}
-                                        </Typography>
-                                      </Box>
-                                    )}
+                            return (
+                              <TableRow
+                                key={task.id}
+                                sx={{
+                                  '&:hover': { bgcolor: LIGHT_BLUE },
+                                  opacity: isLocked ? 0.6 : 1,
+                                }}
+                              >
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {isLocked && <Lock sx={{ fontSize: 18, color: "#D84315" }} />}
+                                    <Box>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
+                                        {task.title}
+                                      </Typography>
+                                      {task.week_number && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                          <ScheduleIcon sx={{ fontSize: 14, color: BLUE }} />
+                                          <Typography variant="caption" color={BLUE}>
+                                            Week {task.week_number}
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Box>
                                   </Box>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={task.course?.name || 'N/A'}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: LIGHT_BLUE, color: BLUE, fontWeight: 700,
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <CalendarToday
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={task.course?.name || 'N/A'}
+                                    size="small"
                                     sx={{
-                                      fontSize: 16,
-                                      color: isOverdue && !isSubmitted ? "#D84315" : BLUE
+                                      bgcolor: LIGHT_BLUE, color: BLUE, fontWeight: 700,
                                     }}
                                   />
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: isOverdue && !isSubmitted ? "#D84315" : BLUE,
-                                      fontWeight: isOverdue && !isSubmitted ? 600 : 400,
-                                    }}
-                                  >
-                                    {new Date(task.due_date).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <Grade sx={{ fontSize: 16, color: BLUE }} />
-                                  <Typography variant="body2" color={BLUE}>
-                                    {task.max_marks}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                {getStatusChip(task)}
-                              </TableCell>
-                              <TableCell align="right">
-                                {isLocked ? (
-                                  <Tooltip title={task.lock_reason || 'Complete previous task first'} arrow>
-                                    <span>
-                                      <Button
-                                        variant="contained"
-                                        size="small"
-                                        disabled
-                                        startIcon={<Lock />}
-                                        sx={{
-                                          fontWeight: 700, bgcolor: "#e0e0e0", color: "#666"
-                                        }}
-                                      >
-                                        Locked
-                                      </Button>
-                                    </span>
-                                  </Tooltip>
-                                ) : isSubmitted ? (
-                                  <Button
-                                    variant="outlined"
-                                    size="small"
-                                    endIcon={<Visibility />}
-                                    onClick={() => navigate(`/student/tasks/${task.id}`)}
-                                    sx={{
-                                      fontWeight: 700,
-                                      borderColor: "#009688", color: "#009688",
-                                      '&:hover': { borderColor: "#009688", bgcolor: "#b2dfdb" }
-                                    }}
-                                  >
-                                    View
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="contained"
-                                    size="small"
-                                    endIcon={<ArrowForward />}
-                                    onClick={() => navigate(`/student/tasks/${task.id}`)}
-                                    sx={{
-                                      bgcolor: isOverdue ? "#D84315" : BLUE,
-                                      fontWeight: 700, color: "#fff",
-                                      '&:hover': { bgcolor: isOverdue ? "#b71c1c" : "#003c8f" }
-                                    }}
-                                  >
-                                    {isOverdue ? 'Submit Now' : 'Submit'}
-                                  </Button>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                                </TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <CalendarToday
+                                      sx={{
+                                        fontSize: 16,
+                                        color: isOverdue && !isSubmitted ? "#D84315" : BLUE
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: isOverdue && !isSubmitted ? "#D84315" : BLUE,
+                                        fontWeight: isOverdue && !isSubmitted ? 600 : 400,
+                                      }}
+                                    >
+                                      {new Date(task.due_date).toLocaleDateString()}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <Grade sx={{ fontSize: 16, color: BLUE }} />
+                                    <Typography variant="body2" color={BLUE}>
+                                      {task.max_marks}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusChip(task)}
+                                </TableCell>
+                                <TableCell align="right">
+                                  {isLocked ? (
+                                    <Tooltip title={task.lock_reason || 'Complete previous task first'} arrow>
+                                      <span>
+                                        <Button
+                                          variant="contained"
+                                          size="small"
+                                          disabled
+                                          startIcon={<Lock />}
+                                          sx={{
+                                            fontWeight: 700, bgcolor: "#e0e0e0", color: "#666"
+                                          }}
+                                        >
+                                          Locked
+                                        </Button>
+                                      </span>
+                                    </Tooltip>
+                                  ) : isSubmitted ? (
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      endIcon={<Visibility />}
+                                      onClick={() => navigate(`/student/tasks/${task.id}`)}
+                                      sx={{
+                                        fontWeight: 700,
+                                        borderColor: "#009688", color: "#009688",
+                                        '&:hover': { borderColor: "#009688", bgcolor: "#b2dfdb" }
+                                      }}
+                                    >
+                                      View
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      endIcon={<ArrowForward />}
+                                      onClick={() => navigate(`/student/tasks/${task.id}`)}
+                                      sx={{
+                                        bgcolor: isOverdue ? "#D84315" : BLUE,
+                                        fontWeight: 700, color: "#fff",
+                                        '&:hover': { bgcolor: isOverdue ? "#b71c1c" : "#003c8f" }
+                                      }}
+                                    >
+                                      {isOverdue ? 'Submit Now' : 'Submit'}
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {/* ✅ Pagination for All Tasks */}
+                    <TablePagination
+                      component="div"
+                      count={allTasks.length}
+                      page={allTasksPage}
+                      onPageChange={handleAllTasksChangePage}
+                      rowsPerPage={allTasksRowsPerPage}
+                      onRowsPerPageChange={handleAllTasksChangeRowsPerPage}
+                      rowsPerPageOptions={[5, 10, 25, 50]}
+                      sx={{
+                        borderTop: `1px solid ${LIGHT_BLUE}`,
+                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                          color: BLUE,
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  </>
                 )}
               </Box>
             </TabPanel>
@@ -398,123 +473,143 @@ const StudentTasks = () => {
                     </Typography>
                   </Box>
                 ) : (
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Details</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Due Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Max Marks</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 700, color: BLUE }}>Action</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {pendingTasks.map((task) => {
-                          const dueDate = new Date(task.due_date);
-                          const now = new Date();
-                          const isOverdue = dueDate < now;
-                          const isLocked = task.is_locked;
-                          return (
-                            <TableRow
-                              key={task.id}
-                              sx={{
-                                bgcolor: isOverdue ? "#fff3e0" : "#fff",
-                                opacity: isLocked ? 0.6 : 1,
-                                '&:hover': { bgcolor: LIGHT_BLUE },
-                              }}
-                            >
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  {isLocked && <Lock sx={{ fontSize: 18, color: "#D84315" }} />}
-                                  <Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
-                                      {task.title}
-                                    </Typography>
-                                    {task.week_number && (
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                                        <ScheduleIcon sx={{ fontSize: 14, color: BLUE }} />
-                                        <Typography variant="caption" color={BLUE}>
-                                          Week {task.week_number}
-                                        </Typography>
-                                      </Box>
+                  <>
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Details</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Due Date</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Max Marks</TableCell>
+                            <TableCell align="right" sx={{ fontWeight: 700, color: BLUE }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {paginatedPendingTasks.map((task) => {
+                            const dueDate = new Date(task.due_date);
+                            const now = new Date();
+                            const isOverdue = dueDate < now;
+                            const isLocked = task.is_locked;
+                            return (
+                              <TableRow
+                                key={task.id}
+                                sx={{
+                                  bgcolor: isOverdue ? "#fff3e0" : "#fff",
+                                  opacity: isLocked ? 0.6 : 1,
+                                  '&:hover': { bgcolor: LIGHT_BLUE },
+                                }}
+                              >
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    {isLocked && <Lock sx={{ fontSize: 18, color: "#D84315" }} />}
+                                    <Box>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
+                                        {task.title}
+                                      </Typography>
+                                      {task.week_number && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                          <ScheduleIcon sx={{ fontSize: 14, color: BLUE }} />
+                                          <Typography variant="caption" color={BLUE}>
+                                            Week {task.week_number}
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Box>
+                                    {isOverdue && !isLocked && (
+                                      <ErrorIcon sx={{ color: "#D84315", fontSize: 18 }} />
                                     )}
                                   </Box>
-                                  {isOverdue && !isLocked && (
-                                    <ErrorIcon sx={{ color: "#D84315", fontSize: 18 }} />
-                                  )}
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={task.course?.name || 'N/A'}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: LIGHT_BLUE, color: BLUE, fontWeight: 700,
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <AccessTime sx={{ fontSize: 16, color: isOverdue ? "#D84315" : BLUE }} />
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      color: isOverdue ? "#D84315" : BLUE,
-                                      fontWeight: isOverdue ? 700 : 400,
-                                    }}
-                                  >
-                                    {new Date(task.due_date).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <Grade sx={{ fontSize: 16, color: BLUE }} />
-                                  <Typography variant="body2" color={BLUE}>
-                                    {task.max_marks}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell align="right">
-                                {isLocked ? (
-                                  <Tooltip title={task.lock_reason || 'Complete previous task first'} arrow>
-                                    <span>
-                                      <Button
-                                        variant="contained"
-                                        size="small"
-                                        disabled
-                                        startIcon={<Lock />}
-                                        sx={{
-                                          fontWeight: 700, bgcolor: "#e0e0e0", color: "#666"
-                                        }}
-                                      >
-                                        Locked
-                                      </Button>
-                                    </span>
-                                  </Tooltip>
-                                ) : (
-                                  <Button
-                                    variant="contained"
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={task.course?.name || 'N/A'}
                                     size="small"
-                                    endIcon={<ArrowForward />}
-                                    onClick={() => navigate(`/student/tasks/${task.id}`)}
                                     sx={{
-                                      bgcolor: isOverdue ? "#D84315" : "#fbbc04",
-                                      fontWeight: 700, color: "#fff",
-                                      '&:hover': { bgcolor: isOverdue ? "#b71c1c" : "#FFA000" }
+                                      bgcolor: LIGHT_BLUE, color: BLUE, fontWeight: 700,
                                     }}
-                                  >
-                                    Submit
-                                  </Button>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <AccessTime sx={{ fontSize: 16, color: isOverdue ? "#D84315" : BLUE }} />
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        color: isOverdue ? "#D84315" : BLUE,
+                                        fontWeight: isOverdue ? 700 : 400,
+                                      }}
+                                    >
+                                      {new Date(task.due_date).toLocaleDateString()}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <Grade sx={{ fontSize: 16, color: BLUE }} />
+                                    <Typography variant="body2" color={BLUE}>
+                                      {task.max_marks}
+                                    </Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell align="right">
+                                  {isLocked ? (
+                                    <Tooltip title={task.lock_reason || 'Complete previous task first'} arrow>
+                                      <span>
+                                        <Button
+                                          variant="contained"
+                                          size="small"
+                                          disabled
+                                          startIcon={<Lock />}
+                                          sx={{
+                                            fontWeight: 700, bgcolor: "#e0e0e0", color: "#666"
+                                          }}
+                                        >
+                                          Locked
+                                        </Button>
+                                      </span>
+                                    </Tooltip>
+                                  ) : (
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      endIcon={<ArrowForward />}
+                                      onClick={() => navigate(`/student/tasks/${task.id}`)}
+                                      sx={{
+                                        bgcolor: isOverdue ? "#D84315" : "#fbbc04",
+                                        fontWeight: 700, color: "#fff",
+                                        '&:hover': { bgcolor: isOverdue ? "#b71c1c" : "#FFA000" }
+                                      }}
+                                    >
+                                      Submit
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {/* ✅ Pagination for Pending Tasks */}
+                    <TablePagination
+                      component="div"
+                      count={pendingTasks.length}
+                      page={pendingPage}
+                      onPageChange={handlePendingChangePage}
+                      rowsPerPage={pendingRowsPerPage}
+                      onRowsPerPageChange={handlePendingChangeRowsPerPage}
+                      rowsPerPageOptions={[5, 10, 25, 50]}
+                      sx={{
+                        borderTop: `1px solid ${LIGHT_BLUE}`,
+                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                          color: BLUE,
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  </>
                 )}
               </Box>
             </TabPanel>
@@ -533,83 +628,103 @@ const StudentTasks = () => {
                     </Typography>
                   </Box>
                 ) : (
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Title</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Submitted Date</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Marks Obtained</TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: BLUE }}>Progress</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {submissions.map((sub) => (
-                          <TableRow
-                            key={sub.id}
-                            sx={{
-                              '&:hover': { bgcolor: LIGHT_BLUE }
-                            }}
-                          >
-                            <TableCell>
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
-                                {sub.task.title}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <CalendarToday sx={{ fontSize: 16, color: BLUE }} />
-                                <Typography variant="body2" color={BLUE}>
-                                  {new Date(sub.submitted_at).toLocaleDateString()}
+                  <>
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task Title</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Submitted Date</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Marks Obtained</TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: BLUE }}>Progress</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {paginatedSubmissions.map((sub) => (
+                            <TableRow
+                              key={sub.id}
+                              sx={{
+                                '&:hover': { bgcolor: LIGHT_BLUE }
+                              }}
+                            >
+                              <TableCell>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: BLUE }}>
+                                  {sub.task.title}
                                 </Typography>
-                              </Box>
-                            </TableCell>
-                            <TableCell>
-                              {sub.marks_obtained !== null ? (
-                                <Chip
-                                  icon={<Grade sx={{ fontSize: 14 }} />}
-                                  label={`${sub.marks_obtained}/${sub.task.max_marks}`}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: "#009688", color: "#fff", fontWeight: 700,
-                                  }}
-                                />
-                              ) : (
-                                <Chip
-                                  label="Pending Evaluation"
-                                  size="small"
-                                  sx={{
-                                    bgcolor: "#e0e0e0", color: "#666", fontWeight: 700,
-                                  }}
-                                />
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {sub.marks_obtained !== null && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                  <Box sx={{
-                                    flex: 1, height: 8, bgcolor: "#b2dfdb", borderRadius: 4,
-                                    overflow: 'hidden'
-                                  }}>
-                                    <Box
-                                      sx={{
-                                        height: '100%',
-                                        width: `${(sub.marks_obtained / sub.task.max_marks) * 100}%`,
-                                        bgcolor: "#009688", borderRadius: 4, transition: 'width 0.5s ease'
-                                      }}
-                                    />
-                                  </Box>
-                                  <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 45, color: BLUE }}>
-                                    {Math.round((sub.marks_obtained / sub.task.max_marks) * 100)}%
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <CalendarToday sx={{ fontSize: 16, color: BLUE }} />
+                                  <Typography variant="body2" color={BLUE}>
+                                    {new Date(sub.submitted_at).toLocaleDateString()}
                                   </Typography>
                                 </Box>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                              </TableCell>
+                              <TableCell>
+                                {sub.marks_obtained !== null ? (
+                                  <Chip
+                                    icon={<Grade sx={{ fontSize: 14 }} />}
+                                    label={`${sub.marks_obtained}/${sub.task.max_marks}`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: "#009688", color: "#fff", fontWeight: 700,
+                                    }}
+                                  />
+                                ) : (
+                                  <Chip
+                                    label="Pending Evaluation"
+                                    size="small"
+                                    sx={{
+                                      bgcolor: "#e0e0e0", color: "#666", fontWeight: 700,
+                                    }}
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {sub.marks_obtained !== null && (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <Box sx={{
+                                      flex: 1, height: 8, bgcolor: "#b2dfdb", borderRadius: 4,
+                                      overflow: 'hidden'
+                                    }}>
+                                      <Box
+                                        sx={{
+                                          height: '100%',
+                                          width: `${(sub.marks_obtained / sub.task.max_marks) * 100}%`,
+                                          bgcolor: "#009688", borderRadius: 4, transition: 'width 0.5s ease'
+                                        }}
+                                      />
+                                    </Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 45, color: BLUE }}>
+                                      {Math.round((sub.marks_obtained / sub.task.max_marks) * 100)}%
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+
+                    {/* ✅ Pagination for Submissions */}
+                    <TablePagination
+                      component="div"
+                      count={submissions.length}
+                      page={submissionsPage}
+                      onPageChange={handleSubmissionsChangePage}
+                      rowsPerPage={submissionsRowsPerPage}
+                      onRowsPerPageChange={handleSubmissionsChangeRowsPerPage}
+                      rowsPerPageOptions={[5, 10, 25, 50]}
+                      sx={{
+                        borderTop: `1px solid ${LIGHT_BLUE}`,
+                        '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                          color: BLUE,
+                          fontWeight: 500
+                        }
+                      }}
+                    />
+                  </>
                 )}
               </Box>
             </TabPanel>

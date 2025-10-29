@@ -5,6 +5,7 @@ import {
   Container, Paper, Typography, Button, Box, CircularProgress, Chip, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Avatar, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, List, ListItemButton, ListItemIcon, ListItemText, Divider, Tooltip,
+  TablePagination
 } from '@mui/material';
 import {
   Visibility, Assignment, People, CheckCircle, School, Dashboard as DashboardIcon, Menu as MenuIcon, Close,
@@ -24,6 +25,15 @@ const BatchList = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('batches');
+  
+  // ✅ Pagination state for main table
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // ✅ Pagination state for dialog tables
+  const [dialogPage, setDialogPage] = useState(0);
+  const [dialogRowsPerPage, setDialogRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const navItems = [
@@ -42,9 +52,40 @@ const BatchList = () => {
     } catch (error) { } finally { setLoading(false); }
   };
 
+  // ✅ Pagination handlers for main table
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Pagination handlers for dialog tables
+  const handleDialogChangePage = (event, newPage) => {
+    setDialogPage(newPage);
+  };
+
+  const handleDialogChangeRowsPerPage = (event) => {
+    setDialogRowsPerPage(parseInt(event.target.value, 10));
+    setDialogPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedBatches = batches.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const paginatedDialogData = dialogContent === 'students' 
+    ? batchStudents.slice(dialogPage * dialogRowsPerPage, dialogPage * dialogRowsPerPage + dialogRowsPerPage)
+    : batchTasks.slice(dialogPage * dialogRowsPerPage, dialogPage * dialogRowsPerPage + dialogRowsPerPage);
+
   const handleViewStudents = async (batch) => {
     setSelectedBatch(batch);
     setDialogContent('students');
+    setDialogPage(0); // Reset dialog pagination
     try {
       const response = await API.get(`/courses/batches/${batch.id}/students/`);
       setBatchStudents(response.data.students || []);
@@ -55,6 +96,7 @@ const BatchList = () => {
   const handleViewTasks = async (batch) => {
     setSelectedBatch(batch);
     setDialogContent('tasks');
+    setDialogPage(0); // Reset dialog pagination
     try {
       const response = await API.get(`/tasks/mentor/batch/${batch.id}/tasks/`);
       setBatchTasks(response.data);
@@ -67,6 +109,7 @@ const BatchList = () => {
     setSelectedBatch(null);
     setBatchStudents([]);
     setBatchTasks([]);
+    setDialogPage(0);
   };
 
   const getInitials = (firstName, lastName) => (
@@ -189,6 +232,7 @@ const BatchList = () => {
               </Box>
             </Box>
           </Paper>
+          
           <Paper elevation={0} sx={{
             borderRadius: 3,
             overflow: 'hidden',
@@ -233,7 +277,7 @@ const BatchList = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    batches.map((batch) => (
+                    paginatedBatches.map((batch) => (
                       <TableRow
                         key={batch.id}
                         hover
@@ -346,6 +390,26 @@ const BatchList = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination for main table */}
+            {batches.length > 0 && (
+              <TablePagination
+                component="div"
+                count={batches.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
         </Container>
       </Box>
@@ -368,7 +432,7 @@ const BatchList = () => {
             {selectedBatch?.name} - {dialogContent === 'students' ? 'Students' : 'Tasks'}
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
+        <DialogContent sx={{ pt: 3, pb: 0 }}>
           {dialogContent === 'students' ? (
             batchStudents.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 6 }}>
@@ -404,7 +468,7 @@ const BatchList = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {batchStudents.map((student) => (
+                      {paginatedDialogData.map((student) => (
                         <TableRow key={student.id} hover>
                           <TableCell>
                             <Box display="flex" alignItems="center" gap={1.5}>
@@ -500,6 +564,24 @@ const BatchList = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* ✅ Pagination for students table */}
+                <TablePagination
+                  component="div"
+                  count={batchStudents.length}
+                  page={dialogPage}
+                  onPageChange={handleDialogChangePage}
+                  rowsPerPage={dialogRowsPerPage}
+                  onRowsPerPageChange={handleDialogChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{
+                    borderTop: `1px solid ${LIGHT_BLUE}`,
+                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                      color: BLUE,
+                      fontWeight: 500
+                    }
+                  }}
+                />
               </Paper>
             )
           ) : (
@@ -534,7 +616,7 @@ const BatchList = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {batchTasks.map((task) => (
+                      {paginatedDialogData.map((task) => (
                         <TableRow key={task.id} hover>
                           <TableCell>
                             <Typography variant="body2" fontWeight={600}>
@@ -592,6 +674,24 @@ const BatchList = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* ✅ Pagination for tasks table */}
+                <TablePagination
+                  component="div"
+                  count={batchTasks.length}
+                  page={dialogPage}
+                  onPageChange={handleDialogChangePage}
+                  rowsPerPage={dialogRowsPerPage}
+                  onRowsPerPageChange={handleDialogChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{
+                    borderTop: `1px solid ${LIGHT_BLUE}`,
+                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                      color: BLUE,
+                      fontWeight: 500
+                    }
+                  }}
+                />
               </Paper>
             )
           )}

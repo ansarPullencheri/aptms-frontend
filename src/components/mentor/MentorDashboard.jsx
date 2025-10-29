@@ -4,7 +4,7 @@ import API from '../../api/axios';
 import {
   Box, Container, Grid, Card, CardContent, Typography, Button, Avatar, Chip, Paper,
   IconButton, List, ListItemButton, ListItemIcon, ListItemText, Divider, useTheme, useMediaQuery,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, TablePagination
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, Group, Assignment, Schedule, School, Menu as MenuIcon, Close,
@@ -25,6 +25,11 @@ const MentorDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -46,6 +51,22 @@ const MentorDashboard = () => {
       });
     } catch (error) { } finally { setLoading(false); }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedBatches = batches.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
@@ -215,116 +236,136 @@ const MentorDashboard = () => {
                 <Typography color="#223a5e">You don't have any batches assigned yet</Typography>
               </Box>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                      <TableCell sx={{ fontWeight: 700, color: BLUE }}>Batch Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: BLUE }}>Students</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: BLUE }}>Duration</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {batches.map((batch) => (
-                      <TableRow
-                        key={batch.id}
-                        sx={{
-                          '&:hover': { bgcolor: LIGHT_BLUE },
-                          transition: 'background-color 0.2s',
-                        }}
-                      >
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {batch.name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <School sx={{ fontSize: 16, color: BLUE }} />
-                            <Typography variant="body2">
-                              {batch.course.name}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={<Group sx={{ fontSize: 16 }} />}
-                            label={`${batch.student_count || 0}/${batch.max_students}`}
-                            size="small"
-                            sx={{
-                              bgcolor: LIGHT_BLUE,
-                              color: BLUE,
-                              fontWeight: 700,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                              <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
-                              <Typography variant="caption" color={BLUE}>
-                                {new Date(batch.start_date).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
-                              <Typography variant="caption" color={BLUE}>
-                                {new Date(batch.end_date).toLocaleDateString()}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={batch.is_active ? 'Active' : 'Inactive'}
-                            size="small"
-                            sx={{
-                              bgcolor: batch.is_active ? BLUE : "#e0e0e0",
-                              color: batch.is_active ? '#fff' : BLUE,
-                              fontWeight: 700,
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() => navigate('/mentor/batches')}
-                                sx={{
-                                  border: `1px solid ${BLUE}`,
-                                  borderRadius: 1.5,
-                                  color: BLUE,
-                                  '&:hover': { bgcolor: BLUE, color: "#fff" },
-                                }}
-                              >
-                                <Visibility fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Grade Submissions">
-                              <IconButton
-                                size="small"
-                                onClick={() => navigate(`/mentor/grade-submissions/${batch.id}`)}
-                                sx={{
-                                  border: `1px solid #0097A7`,
-                                  borderRadius: 1.5,
-                                  color: '#0097A7',
-                                  '&:hover': { bgcolor: '#0097A7', color: "#fff" },
-                                }}
-                              >
-                                <GradeOutlined fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
+                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Batch Name</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Students</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Duration</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Actions</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedBatches.map((batch) => (
+                        <TableRow
+                          key={batch.id}
+                          sx={{
+                            '&:hover': { bgcolor: LIGHT_BLUE },
+                            transition: 'background-color 0.2s',
+                          }}
+                        >
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600}>
+                              {batch.name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <School sx={{ fontSize: 16, color: BLUE }} />
+                              <Typography variant="body2">
+                                {batch.course.name}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              icon={<Group sx={{ fontSize: 16 }} />}
+                              label={`${batch.student_count || 0}/${batch.max_students}`}
+                              size="small"
+                              sx={{
+                                bgcolor: LIGHT_BLUE,
+                                color: BLUE,
+                                fontWeight: 700,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
+                                <Typography variant="caption" color={BLUE}>
+                                  {new Date(batch.start_date).toLocaleDateString()}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
+                                <Typography variant="caption" color={BLUE}>
+                                  {new Date(batch.end_date).toLocaleDateString()}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={batch.is_active ? 'Active' : 'Inactive'}
+                              size="small"
+                              sx={{
+                                bgcolor: batch.is_active ? BLUE : "#e0e0e0",
+                                color: batch.is_active ? '#fff' : BLUE,
+                                fontWeight: 700,
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell align="center">
+                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                              <Tooltip title="View Details">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => navigate('/mentor/batches')}
+                                  sx={{
+                                    border: `1px solid ${BLUE}`,
+                                    borderRadius: 1.5,
+                                    color: BLUE,
+                                    '&:hover': { bgcolor: BLUE, color: "#fff" },
+                                  }}
+                                >
+                                  <Visibility fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Grade Submissions">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => navigate(`/mentor/grade-submissions/${batch.id}`)}
+                                  sx={{
+                                    border: `1px solid #0097A7`,
+                                    borderRadius: 1.5,
+                                    color: '#0097A7',
+                                    '&:hover': { bgcolor: '#0097A7', color: "#fff" },
+                                  }}
+                                >
+                                  <GradeOutlined fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* ✅ Pagination Component */}
+                <TablePagination
+                  component="div"
+                  count={batches.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{
+                    borderTop: `1px solid ${LIGHT_BLUE}`,
+                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                      color: BLUE,
+                      fontWeight: 500
+                    }
+                  }}
+                />
+              </>
             )}
           </Paper>
         </Container>

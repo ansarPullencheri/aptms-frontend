@@ -5,7 +5,7 @@ import {
   Container, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Grid, Box, Chip, Alert, IconButton, Avatar, List, ListItemButton, ListItemIcon,
   ListItemText, Divider, Badge, CircularProgress, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Tooltip,
+  TableContainer, TableHead, TableRow, Tooltip, TablePagination,
 } from '@mui/material';
 import {
   Edit, Delete, Visibility, Add, Assignment, School, People, Task, PersonAdd, Dashboard as DashboardIcon,
@@ -23,6 +23,11 @@ const ManageTasks = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('tasks');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const navItems = [
@@ -48,6 +53,22 @@ const ManageTasks = () => {
       setLoading(false);
     }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedTasks = tasks.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const handleViewTask = (task) => { setSelectedTask(task); setViewDialog(true); };
   const handleCloseViewDialog = () => { setViewDialog(false); setSelectedTask(null); };
@@ -217,8 +238,8 @@ const ManageTasks = () => {
             borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`,
             bgcolor: '#fff', overflow: 'hidden'
           }}>
-            <TableContainer sx={{ maxHeight: 600 }}>
-              <Table stickyHeader>
+            <TableContainer>
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Task Title</TableCell>
@@ -260,7 +281,7 @@ const ManageTasks = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    tasks.map((task) => (
+                    paginatedTasks.map((task) => (
                       <TableRow
                         key={task.id}
                         sx={{ '&:hover': { bgcolor: LIGHT_BLUE }, transition: 'background-color 0.2s' }}>
@@ -375,6 +396,26 @@ const ManageTasks = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            {tasks.length > 0 && (
+              <TablePagination
+                component="div"
+                count={tasks.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
         </Container>
       </Box>

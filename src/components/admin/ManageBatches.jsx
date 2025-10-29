@@ -6,7 +6,7 @@ import {
   TextField, Grid, Box, Select, MenuItem, FormControl, InputLabel, Chip, Alert,
   OutlinedInput, Avatar, IconButton, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, List, ListItemButton, ListItemIcon,
-  ListItemText, Badge, Divider, Tooltip
+  ListItemText, Badge, Divider, Tooltip, TablePagination
 } from '@mui/material';
 import {
   Add, Edit, Delete, PersonAdd, Email, Phone, RemoveCircle, Person, School, CalendarToday,
@@ -29,7 +29,13 @@ const ManageBatches = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('batches');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     name: '',
     course_id: '',
@@ -64,24 +70,28 @@ const ManageBatches = () => {
       setBatches(response.data);
     } catch (error) { }
   };
+
   const fetchCourses = async () => {
     try {
       const response = await API.get('/courses/');
       setCourses(response.data);
     } catch (error) { }
   };
+
   const fetchMentors = async () => {
     try {
       const response = await API.get('/auth/mentors/');
       setMentors(response.data);
     } catch (error) { }
   };
+
   const fetchStudents = async () => {
     try {
       const response = await API.get('/auth/students/');
       setStudents(response.data);
     } catch (error) { }
   };
+
   const fetchBatchStudents = async (batchId) => {
     try {
       const response = await API.get(`/courses/batches/${batchId}/students/`);
@@ -90,6 +100,23 @@ const ManageBatches = () => {
       setBatchStudents([]);
     }
   };
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedBatches = batches.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   const handleOpenDialog = (batch = null) => {
     if (batch) {
       setFormData({
@@ -116,10 +143,12 @@ const ManageBatches = () => {
     }
     setOpenDialog(true);
   };
+
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedBatch(null);
   };
+
   const handleSubmit = async () => {
     try {
       if (selectedBatch) {
@@ -136,6 +165,7 @@ const ManageBatches = () => {
       setMessage({ type: 'error', text: 'Error saving batch' });
     }
   };
+
   const handleDelete = async (batchId, batchName) => {
     if (window.confirm(`Are you sure you want to delete "${batchName}"?`)) {
       try {
@@ -148,21 +178,25 @@ const ManageBatches = () => {
       }
     }
   };
+
   const handleOpenStudentDialog = (batch) => {
     setSelectedBatch(batch);
     setSelectedStudents(batch.students?.map(s => s.id) || []);
     setOpenStudentDialog(true);
   };
+
   const handleOpenViewStudentsDialog = async (batch) => {
     setSelectedBatch(batch);
     setOpenViewStudentsDialog(true);
     await fetchBatchStudents(batch.id);
   };
+
   const handleCloseViewStudentsDialog = () => {
     setOpenViewStudentsDialog(false);
     setSelectedBatch(null);
     setBatchStudents([]);
   };
+
   const handleAddStudents = async () => {
     try {
       await API.post(`/courses/batches/${selectedBatch.id}/add-students/`, {
@@ -176,6 +210,7 @@ const ManageBatches = () => {
       setMessage({ type: 'error', text: 'Error adding students' });
     }
   };
+
   const handleRemoveStudent = async (batchId, studentId) => {
     if (window.confirm('Are you sure you want to remove this student from the batch?')) {
       try {
@@ -189,6 +224,7 @@ const ManageBatches = () => {
       }
     }
   };
+
   const getInitials = (firstName, lastName) => (
     `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
   );
@@ -299,6 +335,7 @@ const ManageBatches = () => {
               </Button>
             </Box>
           </Paper>
+
           {message.text && (
             <Alert severity={message.type} sx={{
               mb: 3, borderRadius: 2,
@@ -310,6 +347,7 @@ const ManageBatches = () => {
               {message.text}
             </Alert>
           )}
+
           <Paper elevation={0} sx={{
             borderRadius: 3,
             border: `1.5px solid ${LIGHT_BLUE}`,
@@ -358,7 +396,7 @@ const ManageBatches = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    batches.map((batch) => (
+                    paginatedBatches.map((batch) => (
                       <TableRow
                         key={batch.id}
                         hover
@@ -502,6 +540,26 @@ const ManageBatches = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            {batches.length > 0 && (
+              <TablePagination
+                component="div"
+                count={batches.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sx={{
+                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                    color: BLUE,
+                    fontWeight: 500
+                  }
+                }}
+              />
+            )}
           </Paper>
 
           {/* Create/Edit Batch Dialog */}

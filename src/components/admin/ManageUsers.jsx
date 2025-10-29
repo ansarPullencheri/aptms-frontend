@@ -7,7 +7,7 @@ import {
   TableHead, TableRow, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, FormControl, InputLabel, Select, MenuItem, IconButton, Alert, Box, Tabs, Tab,
   Grid, Divider, Avatar, Badge, List, ListItemButton, ListItemIcon, ListItemText,
-  CircularProgress
+  CircularProgress, TablePagination
 } from '@mui/material';
 import {
   Edit, Delete, PersonAdd, CheckCircle, Cancel, Email, Phone, CalendarToday,
@@ -121,6 +121,11 @@ const ManageUsers = () => {
   const [viewingUser, setViewingUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('students');
+  
+  // ✅ Pagination state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -129,7 +134,10 @@ const ManageUsers = () => {
   });
 
   useEffect(() => { fetchUsers(); }, []);
-  useEffect(() => { filterUsersByRole(tabValue); }, [tabValue, users]);
+  useEffect(() => { 
+    filterUsersByRole(tabValue);
+    setPage(0); // Reset to first page when tab changes
+  }, [tabValue, users]);
 
   const fetchUsers = async () => {
     try {
@@ -154,6 +162,22 @@ const ManageUsers = () => {
   };
 
   const handleTabChange = (event, newValue) => setTabValue(newValue);
+
+  // ✅ Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // ✅ Calculate paginated data
+  const paginatedUsers = filteredUsers.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   const handleOpenDialog = (user = null) => {
     if (user) {
@@ -323,7 +347,7 @@ const ManageUsers = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map(user => (
+                    paginatedUsers.map(user => (
                       <TableRow key={user.id} hover
                         onClick={() => handleViewDetails(user)}
                         sx={{
@@ -404,6 +428,24 @@ const ManageUsers = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* ✅ Pagination Component */}
+            <TablePagination
+              component="div"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+              sx={{
+                borderTop: `1px solid ${LIGHT_BLUE}`,
+                '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                  color: BLUE,
+                  fontWeight: 500
+                }
+              }}
+            />
           </Paper>
 
           {/* User Details Dialog */}
