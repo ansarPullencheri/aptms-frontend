@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: https://academy.tefora.in/api
 
     steps:
       - uses: actions/checkout@v3
