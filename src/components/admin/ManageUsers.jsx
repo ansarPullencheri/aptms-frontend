@@ -7,12 +7,12 @@ import {
   TableHead, TableRow, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, FormControl, InputLabel, Select, MenuItem, IconButton, Alert, Box, Tabs, Tab,
   Grid, Divider, Avatar, Badge, List, ListItemButton, ListItemIcon, ListItemText,
-  CircularProgress, TablePagination, Tooltip, InputAdornment
+  CircularProgress, TablePagination, Tooltip, InputAdornment, Menu
 } from '@mui/material';
 import {
   Edit, Delete, PersonAdd, CheckCircle, Cancel, Email, Phone, CalendarToday,
   School, Refresh, Dashboard as DashboardIcon, People, Assignment, Task, Menu as MenuIcon, Close,
-  VpnKey, Visibility, VisibilityOff, ContentCopy, AutoAwesome
+  VpnKey, Visibility, VisibilityOff, ContentCopy, AutoAwesome, MoreVert
 } from '@mui/icons-material';
 
 const BLUE = '#1565c0';
@@ -23,7 +23,7 @@ const getRoleName = (role) => role ? role.charAt(0).toUpperCase() + role.slice(1
 const getInitials = (firstName, lastName) =>
   `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 
-// ✅ Simplified Sidebar
+// Sidebar Component
 const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigate, pendingCount }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
@@ -109,7 +109,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigat
   );
 };
 
-// ✅ Password Reset Dialog Component
+// Password Reset Dialog Component
 const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
   const [newPassword, setNewPassword] = useState('');
   const [generatedPassword, setGeneratedPassword] = useState('');
@@ -215,7 +215,6 @@ const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
       </DialogTitle>
 
       <DialogContent sx={{ pt: 3 }}>
-        {/* User Info */}
         <Box sx={{ mb: 3, p: 2, bgcolor: LIGHT_BLUE, borderRadius: 2 }}>
           <Typography variant="body2" gutterBottom>
             <strong>User:</strong> {user.first_name} {user.last_name}
@@ -234,7 +233,6 @@ const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
           </Alert>
         )}
 
-        {/* Option 1: Generate Random Password */}
         <Box sx={{ mb: 3, p: 2, border: '2px solid #e0e0e0', borderRadius: 2 }}>
           <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ color: BLUE }}>
             Option 1: Generate Random Password
@@ -273,7 +271,6 @@ const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
           </Button>
         </Box>
 
-        {/* Option 2: Manual Password */}
         <Box sx={{ p: 2, border: '2px solid #e0e0e0', borderRadius: 2 }}>
           <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ color: BLUE }}>
             Option 2: Set Custom Password
@@ -319,7 +316,6 @@ const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
           </Button>
         </Box>
 
-        {/* Warning */}
         <Alert severity="warning" sx={{ mt: 2 }}>
           <Typography variant="caption">
             <strong>Important:</strong> Make sure to share the new password with the user securely.
@@ -347,13 +343,15 @@ const ManageUsers = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('students');
   
-  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
-  // ✅ Password reset state
   const [resetPasswordUser, setResetPasswordUser] = useState(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  
+  // Menu state
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   
   const navigate = useNavigate();
 
@@ -406,6 +404,17 @@ const ManageUsers = () => {
     page * rowsPerPage + rowsPerPage
   );
 
+  const handleMenuClick = (event, user) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setSelectedUser(user);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedUser(null);
+  };
+
   const handleOpenDialog = (user = null) => {
     if (user) {
       setEditingUser(user);
@@ -443,9 +452,7 @@ const ManageUsers = () => {
     setViewingUser(null);
   };
 
-  // ✅ Open password reset dialog
-  const handleOpenResetPassword = (user, event) => {
-    event.stopPropagation();
+  const handleOpenResetPassword = (user) => {
     setResetPasswordUser(user);
     setResetDialogOpen(true);
   };
@@ -640,36 +647,13 @@ const ManageUsers = () => {
                           </Box>
                         </TableCell>
                         <TableCell align="center">
-                          <Tooltip title="Reset Password">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => handleOpenResetPassword(user, e)}
-                              sx={{ color: '#ff9800', '&:hover': { bgcolor: '#fff3e0' } }}
-                            >
-                              <VpnKey />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit User">
-                            <IconButton size="small"
-                              onClick={e => { e.stopPropagation(); handleOpenDialog(user); }}
-                              sx={{ color: BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
-                              <Edit />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={user.is_approved ? "Disapprove" : "Approve"}>
-                            <IconButton size="small"
-                              onClick={e => { e.stopPropagation(); handleToggleApproval(user.id, user.is_approved, user.username); }}
-                              sx={{ color: user.is_approved ? "#d32f2f" : BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
-                              {user.is_approved ? <Cancel /> : <CheckCircle />}
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete User">
-                            <IconButton size="small"
-                              onClick={e => { e.stopPropagation(); handleDeleteUser(user.id, user.username); }}
-                              sx={{ color: "#d32f2f", '&:hover': { bgcolor: "#fff0f0" } }}>
-                              <Delete />
-                            </IconButton>
-                          </Tooltip>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => handleMenuClick(e, user)}
+                            sx={{ color: BLUE }}
+                          >
+                            <MoreVert />
+                          </IconButton>
                         </TableCell>
                       </TableRow>
                     ))
@@ -678,7 +662,6 @@ const ManageUsers = () => {
               </Table>
             </TableContainer>
 
-            {/* Pagination */}
             <TablePagination
               component="div"
               count={filteredUsers.length}
@@ -696,6 +679,67 @@ const ManageUsers = () => {
               }}
             />
           </Paper>
+
+          {/* Actions Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            PaperProps={{
+              sx: {
+                borderRadius: 2,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                mt: 1,
+                minWidth: 200
+              }
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                handleOpenResetPassword(selectedUser);
+                handleMenuClose();
+              }}
+              sx={{ gap: 2, color: '#ff9800', '&:hover': { bgcolor: '#fff3e0' } }}
+            >
+              <VpnKey fontSize="small" />
+              Reset Password
+            </MenuItem>
+            
+            <MenuItem
+              onClick={() => {
+                handleOpenDialog(selectedUser);
+                handleMenuClose();
+              }}
+              sx={{ gap: 2, color: BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}
+            >
+              <Edit fontSize="small" />
+              Edit User
+            </MenuItem>
+            
+            <MenuItem
+              onClick={() => {
+                handleToggleApproval(selectedUser.id, selectedUser.is_approved, selectedUser.username);
+                handleMenuClose();
+              }}
+              sx={{ gap: 2, color: selectedUser?.is_approved ? "#d32f2f" : BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}
+            >
+              {selectedUser?.is_approved ? <Cancel fontSize="small" /> : <CheckCircle fontSize="small" />}
+              {selectedUser?.is_approved ? 'Disapprove' : 'Approve'}
+            </MenuItem>
+            
+            <Divider />
+            
+            <MenuItem
+              onClick={() => {
+                handleDeleteUser(selectedUser.id, selectedUser.username);
+                handleMenuClose();
+              }}
+              sx={{ gap: 2, color: "#d32f2f", '&:hover': { bgcolor: "#fff0f0" } }}
+            >
+              <Delete fontSize="small" />
+              Delete User
+            </MenuItem>
+          </Menu>
 
           {/* User Details Dialog */}
           <Dialog
@@ -725,7 +769,7 @@ const ManageUsers = () => {
                         <Box>
                           <Typography variant="h6" fontWeight={700}>{viewingUser.first_name} {viewingUser.last_name}</Typography>
                           <Typography variant="body2" color="#223a5e">
-                            @{viewingUser.username}
+                            {viewingUser.username}
                           </Typography>
                         </Box>
                       </Box>
@@ -806,7 +850,7 @@ const ManageUsers = () => {
             </DialogActions>
           </Dialog>
 
-          {/* ✅ Password Reset Dialog */}
+          {/* Password Reset Dialog */}
           <ResetPasswordDialog
             open={resetDialogOpen}
             onClose={() => {
