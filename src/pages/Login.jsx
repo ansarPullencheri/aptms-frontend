@@ -45,12 +45,15 @@ const Login = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh", // ✅ Changed from minHeight to height
+        width: "100vw",  // ✅ Added full width
         bgcolor: LIGHT_BLUE,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        p: 2,
+        p: 0,           // ✅ Removed padding
+        m: 0,           // ✅ Removed margin
+        overflow: "hidden", // ✅ Prevents scrolling
       }}
     >
       <Container maxWidth="xs">
@@ -139,14 +142,16 @@ const Login = () => {
                 "&:hover": {
                   bgcolor: "#003c8f",
                   transform: "translateY(-2px)",
+                  boxShadow: "0 4px 12px rgba(21,101,192,0.3)",
                 },
+                transition: "all 0.3s",
               }}
               disabled={loading}
             >
               {loading ? "Logging in..." : "Login"}
             </Button>
             <Typography align="center" sx={{ mt: 1, color: "#333" }}>
-              Don’t have an account?{" "}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 style={{

@@ -7,21 +7,23 @@ import {
   TableHead, TableRow, Button, Chip, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, FormControl, InputLabel, Select, MenuItem, IconButton, Alert, Box, Tabs, Tab,
   Grid, Divider, Avatar, Badge, List, ListItemButton, ListItemIcon, ListItemText,
-  CircularProgress, TablePagination
+  CircularProgress, TablePagination, Tooltip, InputAdornment
 } from '@mui/material';
 import {
   Edit, Delete, PersonAdd, CheckCircle, Cancel, Email, Phone, CalendarToday,
-  School, Refresh, Dashboard as DashboardIcon, People, Assignment, Task, Menu as MenuIcon, Close
+  School, Refresh, Dashboard as DashboardIcon, People, Assignment, Task, Menu as MenuIcon, Close,
+  VpnKey, Visibility, VisibilityOff, ContentCopy, AutoAwesome
 } from '@mui/icons-material';
 
 const BLUE = '#1565c0';
 const LIGHT_BLUE = '#e3f2fd';
+const GREEN = '#00897b';
 
 const getRoleName = (role) => role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
 const getInitials = (firstName, lastName) =>
   `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 
-// ✅ Simplified Sidebar - EXACTLY matching CreateMentor
+// ✅ Simplified Sidebar
 const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigate, pendingCount }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
@@ -50,7 +52,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigat
       transition: 'width 0.18s',
       p: 0
     }}>
-      {/* Toggle Button */}
       <Box sx={{
         p: 2,
         display: 'flex',
@@ -64,7 +65,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigat
 
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
 
-      {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -109,6 +109,231 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, navigat
   );
 };
 
+// ✅ Password Reset Dialog Component
+const ResetPasswordDialog = ({ open, onClose, user, onSuccess }) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const handleReset = () => {
+    setNewPassword('');
+    setGeneratedPassword('');
+    setMessage(null);
+    setShowPassword(false);
+  };
+
+  const handleClose = () => {
+    handleReset();
+    onClose();
+  };
+
+  const handleGeneratePassword = async () => {
+    try {
+      setLoading(true);
+      setMessage(null);
+
+      const response = await API.post('/auth/admin/generate-password/', {
+        user_id: user.id
+      });
+
+      setGeneratedPassword(response.data.new_password);
+      setMessage({
+        type: 'success',
+        text: 'Password generated successfully! Copy it and share with the user.'
+      });
+
+      if (onSuccess) onSuccess();
+
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to generate password'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualReset = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setMessage({
+        type: 'error',
+        text: 'Password must be at least 6 characters'
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMessage(null);
+
+      await API.post('/auth/admin/reset-password/', {
+        user_id: user.id,
+        new_password: newPassword
+      });
+
+      setMessage({
+        type: 'success',
+        text: 'Password reset successfully!'
+      });
+
+      if (onSuccess) onSuccess();
+
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
+
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to reset password'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(generatedPassword);
+    setMessage({
+      type: 'success',
+      text: 'Password copied to clipboard!'
+    });
+  };
+
+  if (!user) return null;
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <VpnKey />
+          Reset Password
+        </Box>
+      </DialogTitle>
+
+      <DialogContent sx={{ pt: 3 }}>
+        {/* User Info */}
+        <Box sx={{ mb: 3, p: 2, bgcolor: LIGHT_BLUE, borderRadius: 2 }}>
+          <Typography variant="body2" gutterBottom>
+            <strong>User:</strong> {user.first_name} {user.last_name}
+          </Typography>
+          <Typography variant="body2" gutterBottom>
+            <strong>Username:</strong> {user.username}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Email:</strong> {user.email}
+          </Typography>
+        </Box>
+
+        {message && (
+          <Alert severity={message.type} sx={{ mb: 2 }}>
+            {message.text}
+          </Alert>
+        )}
+
+        {/* Option 1: Generate Random Password */}
+        <Box sx={{ mb: 3, p: 2, border: '2px solid #e0e0e0', borderRadius: 2 }}>
+          <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ color: BLUE }}>
+            Option 1: Generate Random Password
+          </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            System will generate a secure 8-character password
+          </Typography>
+
+          {generatedPassword && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" sx={{ fontFamily: 'monospace', flex: 1 }}>
+                {generatedPassword}
+              </Typography>
+              <Tooltip title="Copy password">
+                <IconButton onClick={handleCopyPassword} size="small" sx={{ color: BLUE }}>
+                  <ContentCopy />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<AutoAwesome />}
+            onClick={handleGeneratePassword}
+            disabled={loading}
+            sx={{
+              mt: 2,
+              bgcolor: GREEN,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#00695c' }
+            }}
+          >
+            {generatedPassword ? 'Generate New' : 'Generate Password'}
+          </Button>
+        </Box>
+
+        {/* Option 2: Manual Password */}
+        <Box sx={{ p: 2, border: '2px solid #e0e0e0', borderRadius: 2 }}>
+          <Typography variant="subtitle1" fontWeight={700} gutterBottom sx={{ color: BLUE }}>
+            Option 2: Set Custom Password
+          </Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Enter a password manually (min 6 characters)
+          </Typography>
+
+          <TextField
+            fullWidth
+            type={showPassword ? 'text' : 'password'}
+            label="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            sx={{ mt: 2 }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleManualReset}
+            disabled={loading || !newPassword}
+            sx={{
+              mt: 2,
+              bgcolor: BLUE,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#003c8f' }
+            }}
+          >
+            Set Password
+          </Button>
+        </Box>
+
+        {/* Warning */}
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <Typography variant="caption">
+            <strong>Important:</strong> Make sure to share the new password with the user securely.
+          </Typography>
+        </Alert>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 2 }}>
+        <Button onClick={handleClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const ManageUsers = () => {
   const [tabValue, setTabValue] = useState(0);
   const [users, setUsers] = useState([]);
@@ -122,9 +347,13 @@ const ManageUsers = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('students');
   
-  // ✅ Pagination state
+  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // ✅ Password reset state
+  const [resetPasswordUser, setResetPasswordUser] = useState(null);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
   
   const navigate = useNavigate();
 
@@ -136,7 +365,7 @@ const ManageUsers = () => {
   useEffect(() => { fetchUsers(); }, []);
   useEffect(() => { 
     filterUsersByRole(tabValue);
-    setPage(0); // Reset to first page when tab changes
+    setPage(0);
   }, [tabValue, users]);
 
   const fetchUsers = async () => {
@@ -163,7 +392,6 @@ const ManageUsers = () => {
 
   const handleTabChange = (event, newValue) => setTabValue(newValue);
 
-  // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -173,7 +401,6 @@ const ManageUsers = () => {
     setPage(0);
   };
 
-  // ✅ Calculate paginated data
   const paginatedUsers = filteredUsers.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -214,6 +441,13 @@ const ManageUsers = () => {
   const handleCloseDetailsDialog = () => {
     setOpenDetailsDialog(false);
     setViewingUser(null);
+  };
+
+  // ✅ Open password reset dialog
+  const handleOpenResetPassword = (user, event) => {
+    event.stopPropagation();
+    setResetPasswordUser(user);
+    setResetDialogOpen(true);
   };
 
   const handleSaveUser = async () => {
@@ -406,21 +640,36 @@ const ManageUsers = () => {
                           </Box>
                         </TableCell>
                         <TableCell align="center">
-                          <IconButton size="small" title="Edit User"
-                            onClick={e => { e.stopPropagation(); handleOpenDialog(user); }}
-                            sx={{ color: BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
-                            <Edit />
-                          </IconButton>
-                          <IconButton size="small" title={user.is_approved ? "Disapprove" : "Approve"}
-                            onClick={e => { e.stopPropagation(); handleToggleApproval(user.id, user.is_approved, user.username); }}
-                            sx={{ color: user.is_approved ? "#d32f2f" : BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
-                            {user.is_approved ? <Cancel /> : <CheckCircle />}
-                          </IconButton>
-                          <IconButton size="small" title="Delete User"
-                            onClick={e => { e.stopPropagation(); handleDeleteUser(user.id, user.username); }}
-                            sx={{ color: "#d32f2f", '&:hover': { bgcolor: "#fff0f0" } }}>
-                            <Delete />
-                          </IconButton>
+                          <Tooltip title="Reset Password">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => handleOpenResetPassword(user, e)}
+                              sx={{ color: '#ff9800', '&:hover': { bgcolor: '#fff3e0' } }}
+                            >
+                              <VpnKey />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit User">
+                            <IconButton size="small"
+                              onClick={e => { e.stopPropagation(); handleOpenDialog(user); }}
+                              sx={{ color: BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
+                              <Edit />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={user.is_approved ? "Disapprove" : "Approve"}>
+                            <IconButton size="small"
+                              onClick={e => { e.stopPropagation(); handleToggleApproval(user.id, user.is_approved, user.username); }}
+                              sx={{ color: user.is_approved ? "#d32f2f" : BLUE, '&:hover': { bgcolor: LIGHT_BLUE } }}>
+                              {user.is_approved ? <Cancel /> : <CheckCircle />}
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete User">
+                            <IconButton size="small"
+                              onClick={e => { e.stopPropagation(); handleDeleteUser(user.id, user.username); }}
+                              sx={{ color: "#d32f2f", '&:hover': { bgcolor: "#fff0f0" } }}>
+                              <Delete />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     ))
@@ -429,7 +678,7 @@ const ManageUsers = () => {
               </Table>
             </TableContainer>
 
-            {/* ✅ Pagination Component */}
+            {/* Pagination */}
             <TablePagination
               component="div"
               count={filteredUsers.length}
@@ -556,6 +805,20 @@ const ManageUsers = () => {
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* ✅ Password Reset Dialog */}
+          <ResetPasswordDialog
+            open={resetDialogOpen}
+            onClose={() => {
+              setResetDialogOpen(false);
+              setResetPasswordUser(null);
+            }}
+            user={resetPasswordUser}
+            onSuccess={() => {
+              setMessage({ type: 'success', text: 'Password reset successful' });
+              setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            }}
+          />
         </Container>
       </Box>
     </Box>
