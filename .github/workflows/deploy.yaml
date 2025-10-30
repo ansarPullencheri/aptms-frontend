@@ -1,0 +1,36 @@
+name: Deploy react Vite App
+
+on:
+  push:
+    branches: [production]  # Trigger on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build react vite app
+        run: npm run build
+
+      - name: Deploy to VPS using SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSHKEY }}
+          source: "dist/*"  # Or "out" if using next export
+          target: "/home/ubuntu/aptms-frontend"
+      - name: Run command on remote
+        uses: appleboy/ssh-action@master
+        with:
+          HOST: ${{ secrets.HOST }}
+          USERNAME: ${{ secrets.USERNAME }}
+          KEY: ${{ secrets.SSHKEY }}
+          script: |
+            sudo cp -r /home/ubuntu/aptms-frontend/* /var/www/academy.tefora.in/
+            sudo systemctl restart nginx
