@@ -5,10 +5,11 @@ import {
   Container, Grid, Paper, Typography, Card, CardContent, Box, CircularProgress,
   Avatar, Chip, List, ListItemButton, ListItemIcon, ListItemText, Divider,
   IconButton, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Tooltip,
 } from '@mui/material';
 import {
   Assignment, CheckCircle, PendingActions, TrendingUp, School, Dashboard as DashboardIcon,
-  Menu as MenuIcon, Close, CalendarToday, Grade, Person,
+  Menu as MenuIcon, Close, CalendarToday, Grade, Person, Download,
 } from '@mui/icons-material';
 
 const BLUE = "#1565c0";
@@ -33,7 +34,11 @@ const StudentDashboard = () => {
     try {
       const response = await API.get('/auth/student/dashboard/');
       setDashboardData(response.data);
-    } catch { } finally { setLoading(false); }
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const getInitials = (name) => {
@@ -44,7 +49,27 @@ const StudentDashboard = () => {
       : names[0][0].toUpperCase();
   };
 
-  // ✅ Simplified Sidebar - matching admin/mentor pages exactly
+  // ✅ Download syllabus handler
+  const handleDownloadSyllabus = async (courseId, courseName) => {
+    try {
+      const response = await API.get(`/courses/${courseId}/download-syllabus/`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${courseName}_Syllabus.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading syllabus:', error);
+      alert('Failed to download syllabus. Please try again.');
+    }
+  };
+
   const Sidebar = () => (
     <Box
       sx={{
@@ -63,7 +88,6 @@ const StudentDashboard = () => {
         transition: 'width 0.18s',
         p: 0,
       }}>
-      {/* Toggle Button */}
       <Box sx={{
         p: 2,
         display: 'flex',
@@ -77,7 +101,6 @@ const StudentDashboard = () => {
 
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
 
-      {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -273,6 +296,9 @@ const StudentDashboard = () => {
                             <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
                               Mentor
                             </TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                              Syllabus
+                            </TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -304,6 +330,22 @@ const StudentDashboard = () => {
                                     {batch.mentor_name || 'Not assigned'}
                                   </Typography>
                                 </Box>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Tooltip title="Download Syllabus">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleDownloadSyllabus(batch.course_id, batch.course_name)}
+                                    sx={{
+                                      color: BLUE,
+                                      bgcolor: LIGHT_BLUE,
+                                      '&:hover': { bgcolor: BLUE, color: '#fff' },
+                                      transition: 'all 0.3s'
+                                    }}
+                                  >
+                                    <Download fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
                               </TableCell>
                             </TableRow>
                           ))}
