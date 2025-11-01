@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import {
   Add, Edit, Delete, PersonAdd, School, Timer, Dashboard as DashboardIcon,
-  People, Assignment, Task, Menu as MenuIcon, Close
+  People, Assignment, Task, Menu as MenuIcon, Close, UploadFile, Download, CheckCircle
 } from '@mui/icons-material';
 
 const BLUE = '#1565c0';
@@ -25,8 +25,8 @@ const ManageCourses = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('courses');
+  const [syllabusFile, setSyllabusFile] = useState(null);  // ✅ New state
   
-  // ✅ Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   
@@ -69,7 +69,6 @@ const ManageCourses = () => {
     } catch (error) { }
   };
 
-  // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -79,7 +78,6 @@ const ManageCourses = () => {
     setPage(0);
   };
 
-  // ✅ Calculate paginated data
   const paginatedCourses = courses.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -103,27 +101,54 @@ const ManageCourses = () => {
       });
       setSelectedCourse(null);
     }
+    setSyllabusFile(null);  // ✅ Reset file
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedCourse(null);
+    setSyllabusFile(null);  // ✅ Reset file
   };
 
+  // ✅ Handle file selection
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setMessage({ type: 'error', text: 'Only PDF files are allowed' });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setMessage({ type: 'error', text: 'File size must be less than 10MB' });
+        return;
+      }
+      setSyllabusFile(file);
+    }
+  };
+
+  // ✅ Updated submit handler with file upload
   const handleSubmit = async () => {
     try {
-      const submitData = {
-        name: formData.name.trim(),
-        code: formData.code.trim(),
-        description: formData.description.trim(),
-        duration_weeks: parseInt(formData.duration_weeks) || 1,
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('code', formData.code.trim());
+      formDataToSend.append('description', formData.description.trim());
+      formDataToSend.append('duration_weeks', parseInt(formData.duration_weeks) || 1);
+      
+      if (syllabusFile) {
+        formDataToSend.append('syllabus', syllabusFile);
+      }
+
       if (selectedCourse) {
-        await API.put(`/courses/${selectedCourse.id}/update/`, submitData);
+        await API.put(`/courses/${selectedCourse.id}/update/`, formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         setMessage({ type: 'success', text: 'Course updated successfully!' });
       } else {
-        await API.post('/courses/create/', submitData);
+        await API.post('/courses/create/', formDataToSend, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
         setMessage({ type: 'success', text: 'Course created successfully!' });
       }
       fetchCourses();
@@ -133,7 +158,6 @@ const ManageCourses = () => {
       const errorMsg =
         error.response?.data?.error ||
         error.response?.data?.message ||
-        JSON.stringify(error.response?.data) ||
         'Error saving course';
       setMessage({ type: 'error', text: errorMsg });
     }
@@ -172,11 +196,30 @@ const ManageCourses = () => {
     }
   };
 
+  // ✅ Download syllabus handler
+  const handleDownloadSyllabus = async (courseId, courseName) => {
+    try {
+      const response = await API.get(`/courses/${courseId}/download-syllabus/`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${courseName}_Syllabus.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to download syllabus' });
+    }
+  };
+
   const getInitials = (firstName, lastName) => (
     `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
   );
 
-  // ✅ Simplified Sidebar - matching AdminDashboard
   const Sidebar = () => (
     <Box sx={{
       width: sidebarOpen ? 220 : 70,
@@ -194,7 +237,6 @@ const ManageCourses = () => {
       transition: 'width 0.18s',
       p: 0
     }}>
-      {/* Toggle Button */}
       <Box sx={{
         p: 2,
         display: 'flex',
@@ -208,7 +250,6 @@ const ManageCourses = () => {
 
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
 
-      {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -231,13 +272,7 @@ const ManageCourses = () => {
               }}
             >
               <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE, minWidth: 40 }}>
-                {item.badge ? (
-                  <Badge badgeContent={item.badge} color="error">
-                    <Icon />
-                  </Badge>
-                ) : (
-                  <Icon />
-                )}
+                <Icon />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
@@ -260,7 +295,6 @@ const ManageCourses = () => {
       <Sidebar />
       <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
-          {/* Header */}
           <Paper elevation={0} sx={{
             p: 3, mb: 4, borderRadius: 3, bgcolor: '#fff',
             border: `1.5px solid ${BLUE}`
@@ -271,7 +305,7 @@ const ManageCourses = () => {
                   Manage Courses
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#223a5e' }}>
-                  Create, edit, and manage courses with mentor assignments
+                  Create, edit, and manage courses with mentor assignments and syllabus
                 </Typography>
               </Box>
               <Button
@@ -297,7 +331,6 @@ const ManageCourses = () => {
                 mb: 3,
                 borderRadius: 2,
                 boxShadow: '0 2px 8px rgba(21,101,192,0.08)',
-                color: message.type === 'error' ? "#d32f2f" : BLUE,
               }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
@@ -305,16 +338,12 @@ const ManageCourses = () => {
             </Alert>
           )}
 
-          {/* Courses Table */}
-          <Paper
-            elevation={0}
-            sx={{
-              borderRadius: 3,
-              overflow: 'hidden',
-              border: `1.5px solid ${LIGHT_BLUE}`,
-              bgcolor: '#fff',
-            }}
-          >
+          <Paper elevation={0} sx={{
+            borderRadius: 3,
+            overflow: 'hidden',
+            border: `1.5px solid ${LIGHT_BLUE}`,
+            bgcolor: '#fff',
+          }}>
             <TableContainer>
               <Table>
                 <TableHead>
@@ -332,6 +361,9 @@ const ManageCourses = () => {
                       Mentor
                     </TableCell>
                     <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                      Syllabus
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
                       Actions
                     </TableCell>
                   </TableRow>
@@ -339,7 +371,7 @@ const ManageCourses = () => {
                 <TableBody>
                   {courses.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                      <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                         <Assignment sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
                         <Typography variant="h6" color={BLUE}>
                           No Courses Yet
@@ -393,7 +425,7 @@ const ManageCourses = () => {
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              maxWidth: 400,
+                              maxWidth: 300,
                             }}
                           >
                             {course.description || 'No description'}
@@ -425,9 +457,6 @@ const ManageCourses = () => {
                                 <Typography variant="body2" fontWeight={600}>
                                   {course.mentor.first_name} {course.mentor.last_name}
                                 </Typography>
-                                <Typography variant="caption" color="#223a5e">
-                                  {course.mentor.email}
-                                </Typography>
                               </Box>
                             </Box>
                           ) : (
@@ -438,6 +467,34 @@ const ManageCourses = () => {
                                 background: LIGHT_BLUE,
                                 color: BLUE,
                                 fontWeight: 700,
+                              }}
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell align="center">
+                          {course.syllabus ? (
+                            <Tooltip title="Download Syllabus">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDownloadSyllabus(course.id, course.name)}
+                                sx={{
+                                  color: '#00897b',
+                                  bgcolor: '#b2dfdb',
+                                  '&:hover': { bgcolor: '#00897b', color: '#fff' }
+                                }}
+                              >
+                                <Download fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Chip
+                              label="No Syllabus"
+                              size="small"
+                              sx={{
+                                bgcolor: '#fff0f0',
+                                color: '#d32f2f',
+                                fontWeight: 600,
+                                fontSize: '0.75rem'
                               }}
                             />
                           )}
@@ -504,7 +561,6 @@ const ManageCourses = () => {
               </Table>
             </TableContainer>
 
-            {/* ✅ Pagination Component */}
             {courses.length > 0 && (
               <TablePagination
                 component="div"
@@ -592,6 +648,58 @@ const ManageCourses = () => {
                 required
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
+            </Grid>
+            
+            {/* ✅ Syllabus Upload Section */}
+            <Grid item xs={12}>
+              <Box sx={{ 
+                border: `2px dashed ${LIGHT_BLUE}`, 
+                borderRadius: 2, 
+                p: 3, 
+                textAlign: 'center',
+                bgcolor: '#fafafa'
+              }}>
+                <UploadFile sx={{ fontSize: 48, color: BLUE, mb: 1 }} />
+                <Typography variant="body2" color="#223a5e" gutterBottom>
+                  Upload Syllabus (PDF only, max 10MB)
+                </Typography>
+                <input
+                  accept="application/pdf"
+                  type="file"
+                  id="syllabus-upload"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+                <label htmlFor="syllabus-upload">
+                  <Button
+                    variant="outlined"
+                    component="span"
+                    startIcon={<UploadFile />}
+                    sx={{
+                      mt: 1,
+                      borderColor: BLUE,
+                      color: BLUE,
+                      borderRadius: 2,
+                      '&:hover': { bgcolor: LIGHT_BLUE }
+                    }}
+                  >
+                    Choose File
+                  </Button>
+                </label>
+                {syllabusFile && (
+                  <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                    <CheckCircle sx={{ color: '#00897b', fontSize: 20 }} />
+                    <Typography variant="body2" color="#00897b" fontWeight={600}>
+                      {syllabusFile.name}
+                    </Typography>
+                  </Box>
+                )}
+                {selectedCourse?.syllabus && !syllabusFile && (
+                  <Typography variant="caption" color="#00897b" sx={{ mt: 1, display: 'block' }}>
+                    ✓ Syllabus already uploaded
+                  </Typography>
+                )}
+              </Box>
             </Grid>
           </Grid>
         </DialogContent>

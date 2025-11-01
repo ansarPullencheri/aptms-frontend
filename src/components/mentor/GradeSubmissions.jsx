@@ -2,22 +2,57 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Container, Paper, Typography, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Box, CircularProgress, Chip, Alert, Grid, Card,
-  CardContent, Tabs, Tab, InputAdornment, IconButton, Collapse, MenuItem,
-  Select, FormControl, InputLabel, TablePagination, Accordion, AccordionSummary,
-  AccordionDetails
+  Container,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Box,
+  CircularProgress,
+  Chip,
+  Alert,
+  Grid,
+  Card,
+  CardContent,
+  Tabs,
+  Tab,
+  InputAdornment,
+  IconButton,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  TablePagination,
+  Divider,
+  Avatar
 } from '@mui/material';
 import {
-  ArrowBack, Grade, Search, FilterList, ExpandMore, Assessment,
-  CheckCircle, PendingActions, Assignment
+  ArrowBack,
+  Grade,
+  Search,
+  Assessment,
+  CheckCircle,
+  PendingActions,
+  Assignment,
+  Download,
+  Close
 } from '@mui/icons-material';
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
 const GREEN = "#009688";
 const YELLOW = "#fbbc04";
+const RED = "#f44336";
 
 const GradeSubmissions = () => {
   const { batchId } = useParams();
@@ -26,11 +61,14 @@ const GradeSubmissions = () => {
   // Data states
   const [batchData, setBatchData] = useState(null);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [submissionDetail, setSubmissionDetail] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
   
   // UI states
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openGradeDialog, setOpenGradeDialog] = useState(false);
+  const [openDetailDialog, setOpenDetailDialog] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTask, setFilterTask] = useState('all');
@@ -50,13 +88,57 @@ const GradeSubmissions = () => {
 
   const fetchBatchSubmissions = async () => {
     try {
+      setLoading(true);
+      console.log(`📍 Fetching batch submissions for batch: ${batchId}`);
       const response = await API.get(`/tasks/mentor/batch/${batchId}/submissions/`);
+      console.log('✅ Batch submissions loaded:', response.data);
       setBatchData(response.data);
     } catch (error) {
-      console.error('Error fetching submissions:', error);
+      console.error('❌ Error fetching submissions:', error);
+      setMessage({ 
+        type: 'error', 
+        text: `Failed to load submissions: ${error.response?.data?.error || error.message}` 
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Fetch detailed submission with file and text
+  const handleViewSubmission = async (submission) => {
+    try {
+      setDetailLoading(true);
+      console.log('📍 Fetching submission ID:', submission.submission_id);
+      
+      const response = await API.get(`/tasks/mentor/submissions/${submission.submission_id}/`);
+      
+      console.log('✅ Submission Detail Response:', response.data);
+      console.log('📝 Submission Text:', response.data.submission_text);
+      console.log('📎 Submission File:', response.data.submission_file);
+      
+      setSubmissionDetail(response.data);
+      setSelectedSubmission(submission);
+      setOpenDetailDialog(true);
+    } catch (error) {
+      console.error('❌ Error fetching submission detail:', error);
+      console.error('❌ Error Status:', error.response?.status);
+      console.error('❌ Error Data:', error.response?.data);
+      console.error('❌ Error Message:', error.message);
+      
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      setMessage({ 
+        type: 'error', 
+        text: `Failed to load submission details: ${errorMsg}` 
+      });
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  // ✅ Handle row click
+  const handleRowClick = async (submission) => {
+    console.log('🖱️ Row clicked:', submission);
+    await handleViewSubmission(submission);
   };
 
   // Calculate statistics
@@ -134,27 +216,60 @@ const GradeSubmissions = () => {
       marks_obtained: submission.marks_obtained || '',
       feedback: submission.feedback || '',
     });
-    setOpenDialog(true);
+    setOpenGradeDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedSubmission(null);
+  const handleCloseGradeDialog = () => {
+    setOpenGradeDialog(false);
+    setGradeData({ marks_obtained: '', feedback: '' });
+  };
+
+  const handleCloseDetailDialog = () => {
+    setOpenDetailDialog(false);
+    setSubmissionDetail(null);
   };
 
   const handleGradeSubmit = async () => {
     try {
-      await API.patch(
-        `/tasks/submissions/${selectedSubmission.submission_id}/grade/`,
+      if (!gradeData.marks_obtained) {
+        setMessage({ type: 'error', text: 'Please enter marks' });
+        return;
+      }
+
+      const marks = parseFloat(gradeData.marks_obtained);
+      if (marks > selectedSubmission.max_marks) {
+        setMessage({ 
+          type: 'error', 
+          text: `Marks cannot exceed ${selectedSubmission.max_marks}` 
+        });
+        return;
+      }
+
+      console.log('📤 Submitting grade:', gradeData);
+      
+      await API.post(
+        `/tasks/mentor/submissions/${selectedSubmission.submission_id}/grade/`,
         gradeData
       );
-      setMessage('Submission graded successfully!');
+      
+      setMessage({ type: 'success', text: 'Submission graded successfully!' });
       fetchBatchSubmissions();
-      handleCloseDialog();
-      setTimeout(() => setMessage(''), 3000);
+      handleCloseGradeDialog();
+      handleCloseDetailDialog();
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
-      setMessage('Error grading submission');
-      console.error('Error:', error);
+      console.error('❌ Error grading submission:', error);
+      setMessage({ 
+        type: 'error', 
+        text: `Error grading submission: ${error.response?.data?.error || error.message}` 
+      });
+    }
+  };
+
+  const handleDownloadFile = () => {
+    if (submissionDetail?.submission_file) {
+      console.log('📥 Downloading file:', submissionDetail.submission_file);
+      window.open(submissionDetail.submission_file, '_blank');
     }
   };
 
@@ -209,9 +324,13 @@ const GradeSubmissions = () => {
         </Typography>
       </Paper>
 
-      {message && (
-        <Alert severity={message.includes('Error') ? "error" : "success"} sx={{ mb: 2, borderRadius: 2 }}>
-          {message}
+      {message.text && (
+        <Alert 
+          severity={message.type || "info"} 
+          sx={{ mb: 2, borderRadius: 2 }}
+          onClose={() => setMessage({ type: '', text: '' })}
+        >
+          {message.text}
         </Alert>
       )}
 
@@ -290,8 +409,8 @@ const GradeSubmissions = () => {
         </Grid>
       </Grid>
 
-      {/* Tabs */}
-      <Paper sx={{ borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`, mb: 3 }}>
+      {/* Tabs and Filters */}
+      <Paper sx={{ borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`, mb: 3, overflow: 'hidden' }}>
         <Tabs
           value={tabValue}
           onChange={(e, newValue) => {
@@ -379,7 +498,7 @@ const GradeSubmissions = () => {
           </Box>
         </Box>
 
-        {/* Submissions Table */}
+        {/* Submissions Table - ✅ CLICKABLE ROWS */}
         <TableContainer>
           <Table>
             <TableHead sx={{ bgcolor: LIGHT_BLUE }}>
@@ -405,24 +524,54 @@ const GradeSubmissions = () => {
                 paginatedSubmissions.map((submission) => (
                   <TableRow
                     key={submission.submission_id}
-                    sx={{ '&:hover': { bgcolor: LIGHT_BLUE } }}
+                    onClick={() => handleRowClick(submission)}
+                    sx={{
+                      '&:hover': {
+                        bgcolor: LIGHT_BLUE,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(21,101,192,0.1)'
+                      },
+                      transition: 'all 0.2s',
+                    }}
                   >
                     <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
-                        {submission.student_name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {submission.student_email}
-                      </Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            bgcolor: BLUE,
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: '#fff'
+                          }}
+                        >
+                          {submission.student_name.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight={600}>
+                            {submission.student_name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {submission.student_email}
+                          </Typography>
+                        </Box>
+                      </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
+                      <Typography variant="body2" fontWeight={600}>
                         {submission.task_title}
+                      </Typography>
+                      <Typography variant="caption" color={BLUE}>
+                        Max: {submission.max_marks}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="caption">
                         {new Date(submission.submitted_at).toLocaleDateString()}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {new Date(submission.submitted_at).toLocaleTimeString()}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -438,7 +587,7 @@ const GradeSubmissions = () => {
                         />
                       ) : (
                         <Typography variant="body2" color="text.secondary">
-                          Not graded
+                          —
                         </Typography>
                       )}
                     </TableCell>
@@ -458,12 +607,15 @@ const GradeSubmissions = () => {
                         size="small"
                         variant="contained"
                         startIcon={<Grade />}
-                        onClick={() => handleOpenGradeDialog(submission)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenGradeDialog(submission);
+                        }}
                         sx={{
                           bgcolor: BLUE,
                           color: "#fff",
                           borderRadius: 2,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           '&:hover': { bgcolor: "#003c8f" }
                         }}
                       >
@@ -496,8 +648,239 @@ const GradeSubmissions = () => {
         />
       </Paper>
 
+      {/* ✅ View Submission Detail Dialog */}
+      <Dialog 
+        open={openDetailDialog} 
+        onClose={handleCloseDetailDialog} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: BLUE, 
+          color: '#fff', 
+          fontWeight: 700,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Box>Submission Details</Box>
+          <IconButton
+            onClick={handleCloseDetailDialog}
+            sx={{ color: '#fff' }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pt: 3 }}>
+          {detailLoading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress sx={{ color: BLUE }} />
+            </Box>
+          ) : submissionDetail ? (
+            <Box>
+              {/* Student Info */}
+              <Box sx={{ mb: 3, p: 2, bgcolor: LIGHT_BLUE, borderRadius: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: BLUE, fontWeight: 700, mb: 1 }}>
+                  👤 Student Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Name</Typography>
+                    <Typography variant="body2" fontWeight={600}>{submissionDetail.student.name}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Username</Typography>
+                    <Typography variant="body2" fontWeight={600}>{submissionDetail.student.username}</Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="caption" color="#223a5e">Email</Typography>
+                    <Typography variant="body2" fontWeight={600}>{submissionDetail.student.email}</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Task Info */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ color: BLUE, fontWeight: 700, mb: 2 }}>
+                  📋 Task Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Paper sx={{ p: 2, bgcolor: '#f9f9f9', border: `1px solid ${LIGHT_BLUE}` }}>
+                      <Typography variant="caption" color="#223a5e">Task Title</Typography>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: BLUE, mt: 0.5 }}>
+                        {submissionDetail.task.title}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Max Marks</Typography>
+                    <Typography variant="body2" fontWeight={600}>{submissionDetail.task.max_marks}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Due Date</Typography>
+                    <Typography variant="body2">{new Date(submissionDetail.task.due_date).toLocaleDateString()}</Typography>
+                  </Grid>
+                  {submissionDetail.task.description && (
+                    <Grid item xs={12}>
+                      <Typography variant="caption" color="#223a5e">Description</Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5, color: '#333', whiteSpace: 'pre-wrap' }}>
+                        {submissionDetail.task.description}
+                      </Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Submission Content */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ color: BLUE, fontWeight: 700, mb: 2 }}>
+                  📤 Submitted Content
+                </Typography>
+
+                {submissionDetail.submission_text || submissionDetail.submission_file ? (
+                  <>
+                    {/* Submission Text */}
+                    {submissionDetail.submission_text && (
+                      <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 2, border: '1px solid #e0e0e0' }}>
+                        <Typography variant="caption" color="#223a5e" fontWeight={700} display="block" mb={1}>
+                          📝 Submission Text
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            whiteSpace: 'pre-wrap', 
+                            color: '#333',
+                            lineHeight: 1.6,
+                            maxHeight: 300,
+                            overflow: 'auto'
+                          }}
+                        >
+                          {submissionDetail.submission_text}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Submission File Download */}
+                    {submissionDetail.submission_file && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="caption" color="#223a5e" fontWeight={700} display="block" mb={1}>
+                          📎 Attached File
+                        </Typography>
+                        <Button
+                          fullWidth
+                          variant="outlined"
+                          startIcon={<Download />}
+                          onClick={handleDownloadFile}
+                          sx={{
+                            borderColor: BLUE,
+                            color: BLUE,
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            py: 1.2,
+                            '&:hover': { bgcolor: LIGHT_BLUE }
+                          }}
+                        >
+                          Download Submitted File
+                        </Button>
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Paper sx={{ p: 2, bgcolor: '#fff0f0', border: '1px solid #ffcdd2' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      ⚠️ No submission content found
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+
+              {/* Submission Meta */}
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ p: 2, bgcolor: LIGHT_BLUE, borderRadius: 2 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Submitted At</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {new Date(submissionDetail.submitted_at).toLocaleDateString()} {new Date(submissionDetail.submitted_at).toLocaleTimeString()}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="#223a5e">Status</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {submissionDetail.status || 'Submitted'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Grading Info */}
+              {submissionDetail.is_graded && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: GREEN, borderRadius: 2, color: '#fff' }}>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    ✓ Grading Status
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Marks Obtained:</strong> {submissionDetail.marks_obtained}/{submissionDetail.task.max_marks}
+                  </Typography>
+                  {submissionDetail.feedback && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Feedback:</strong> {submissionDetail.feedback}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography color="error">No submission details available</Typography>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button 
+            onClick={handleCloseDetailDialog}
+            sx={{ borderRadius: 2 }}
+          >
+            Close
+          </Button>
+          {selectedSubmission && (
+            <Button
+              variant="contained"
+              startIcon={<Grade />}
+              onClick={() => {
+                handleCloseDetailDialog();
+                handleOpenGradeDialog(selectedSubmission);
+              }}
+              sx={{
+                bgcolor: BLUE,
+                color: "#fff",
+                borderRadius: 2,
+                fontWeight: 600,
+                '&:hover': { bgcolor: "#003c8f" }
+              }}
+            >
+              {selectedSubmission.is_graded ? 'Edit Grade' : 'Grade Now'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
       {/* Grade Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={openGradeDialog} 
+        onClose={handleCloseGradeDialog} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
           Grade Submission - {selectedSubmission?.student_name}
         </DialogTitle>
@@ -506,8 +889,11 @@ const GradeSubmissions = () => {
             <Typography variant="body2" color={BLUE} gutterBottom>
               <strong>Task:</strong> {selectedSubmission?.task_title}
             </Typography>
-            <Typography variant="body2" color={BLUE}>
+            <Typography variant="body2" color={BLUE} gutterBottom>
               <strong>Maximum Marks:</strong> {selectedSubmission?.max_marks}
+            </Typography>
+            <Typography variant="body2" color={BLUE}>
+              <strong>Submitted:</strong> {selectedSubmission && new Date(selectedSubmission.submitted_at).toLocaleDateString()}
             </Typography>
           </Box>
 
@@ -522,8 +908,10 @@ const GradeSubmissions = () => {
             sx={{ mb: 2 }}
             inputProps={{
               max: selectedSubmission?.max_marks,
-              min: 0
+              min: 0,
+              step: 0.5
             }}
+            variant="outlined"
           />
 
           <TextField
@@ -536,10 +924,11 @@ const GradeSubmissions = () => {
               setGradeData({ ...gradeData, feedback: e.target.value })
             }
             placeholder="Provide detailed feedback to the student..."
+            variant="outlined"
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleCloseDialog}>
+          <Button onClick={handleCloseGradeDialog}>
             Cancel
           </Button>
           <Button
@@ -550,7 +939,8 @@ const GradeSubmissions = () => {
               bgcolor: BLUE,
               color: "#fff",
               borderRadius: 2,
-              fontWeight: 600
+              fontWeight: 600,
+              '&:hover': { bgcolor: "#003c8f" }
             }}
           >
             Submit Grade
