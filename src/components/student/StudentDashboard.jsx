@@ -9,11 +9,13 @@ import {
 } from '@mui/material';
 import {
   Assignment, CheckCircle, PendingActions, TrendingUp, School, Dashboard as DashboardIcon,
-  Menu as MenuIcon, Close, CalendarToday, Grade, Person, Download,
+  Menu as MenuIcon, Close, CalendarToday, Grade, Person, Download, RateReview,
 } from '@mui/icons-material';
+
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
+
 
 const StudentDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -22,13 +24,18 @@ const StudentDashboard = () => {
   const [activeNav, setActiveNav] = useState('dashboard');
   const navigate = useNavigate();
 
+
+  // ✅ Added Progress Feedback to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/student/dashboard' },
     { id: 'tasks', label: 'My Tasks', icon: Assignment, path: '/student/tasks' },
     { id: 'submissions', label: 'Submissions', icon: CheckCircle, path: '/student/submissions' },
+    { id: 'feedback', label: 'My Feedback', icon: RateReview, path: '/student/progress-feedback' },
   ];
 
+
   useEffect(() => { fetchDashboard(); }, []);
+
 
   const fetchDashboard = async () => {
     try {
@@ -41,6 +48,7 @@ const StudentDashboard = () => {
     }
   };
 
+
   const getInitials = (name) => {
     if (!name) return 'S';
     const names = name.split(' ');
@@ -48,6 +56,7 @@ const StudentDashboard = () => {
       ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
       : names[0][0].toUpperCase();
   };
+
 
   // ✅ Download syllabus handler
   const handleDownloadSyllabus = async (courseId, courseName) => {
@@ -70,6 +79,8 @@ const StudentDashboard = () => {
     }
   };
 
+
+  // ✅ Sidebar with Progress Feedback
   const Sidebar = () => (
     <Box
       sx={{
@@ -99,7 +110,9 @@ const StudentDashboard = () => {
         </IconButton>
       </Box>
 
+
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+
 
       <List sx={{ flex: 1, px: 1, py: 2 }}>
         {navItems.map((item) => {
@@ -138,6 +151,7 @@ const StudentDashboard = () => {
     </Box>
   );
 
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -148,6 +162,7 @@ const StudentDashboard = () => {
       </Box>
     );
   }
+
 
   const statCards = [
     {
@@ -180,6 +195,7 @@ const StudentDashboard = () => {
     },
   ];
 
+
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
       <Sidebar />
@@ -211,6 +227,7 @@ const StudentDashboard = () => {
               </Box>
             </Box>
           </Paper>
+
 
           {/* Stats Cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -252,6 +269,7 @@ const StudentDashboard = () => {
               );
             })}
           </Grid>
+
 
           <Grid container spacing={3}>
             {/* Enrolled Batches */}
@@ -356,6 +374,7 @@ const StudentDashboard = () => {
                 )}
               </Paper>
             </Grid>
+
 
             {/* Recent Submissions */}
             <Grid item xs={12} md={6}>
@@ -471,5 +490,6 @@ const StudentDashboard = () => {
     </Box>
   );
 };
+
 
 export default StudentDashboard;

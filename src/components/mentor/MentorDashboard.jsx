@@ -8,11 +8,15 @@ import {
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, Group, Assignment, Schedule, School, Menu as MenuIcon, Close,
-  GradeOutlined, AddTask, Visibility, Edit, CalendarToday
+  GradeOutlined, AddTask, Visibility, Edit, CalendarToday, Assessment, RateReview
 } from '@mui/icons-material';
+
+
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
+
+
 
 const MentorDashboard = () => {
   const [batches, setBatches] = useState([]);
@@ -34,7 +38,11 @@ const MentorDashboard = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+
+
   useEffect(() => { fetchDashboardData(); }, []);
+
+
 
   const fetchDashboardData = async () => {
     try {
@@ -52,15 +60,21 @@ const MentorDashboard = () => {
     } catch (error) { } finally { setLoading(false); }
   };
 
+
+
   // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+
 
   // ✅ Calculate paginated data
   const paginatedBatches = batches.slice(
@@ -68,12 +82,19 @@ const MentorDashboard = () => {
     page * rowsPerPage + rowsPerPage
   );
 
+
+
+  // ✅ UPDATED - Added My Reviews to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
     { id: 'batches', label: 'My Batches', icon: Group, path: '/mentor/batches' },
     { id: 'create-task', label: 'Create Task', icon: AddTask, path: '/mentor/create-task' },
     { id: 'tasks', label: 'Tasks', icon: Assignment, path: '/mentor/tasks' },
+    { id: 'weekly-review', label: 'Weekly Review', icon: Assessment, path: '/mentor/weekly-review' },
+    { id: 'my-reviews', label: 'My Reviews', icon: RateReview, path: '/mentor/reviews' }, // ✅ NEW
   ];
+
+
 
   const statCards = [
     { title: 'My Batches', value: stats.totalBatches, icon: Group, color: BLUE },
@@ -81,6 +102,8 @@ const MentorDashboard = () => {
     { title: 'Tasks Assigned', value: stats.totalTasks, icon: Assignment, color: "#1976d2" },
     { title: 'Pending Grading', value: stats.pendingGrading, icon: Schedule, color: "#D84315" },
   ];
+
+
 
   // ✅ Simplified Sidebar - matching admin pages exactly
   const Sidebar = () => (
@@ -113,7 +136,11 @@ const MentorDashboard = () => {
         </IconButton>
       </Box>
 
+
+
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+
+
 
       {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
@@ -153,6 +180,8 @@ const MentorDashboard = () => {
     </Box>
   );
 
+
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', bgcolor: LIGHT_BLUE, pt: '64px' }}>
@@ -170,9 +199,13 @@ const MentorDashboard = () => {
     );
   }
 
+
+
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
       <Sidebar />
+
+
 
       <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -219,6 +252,8 @@ const MentorDashboard = () => {
             })}
           </Grid>
 
+
+
           {/* Assigned Batches Table */}
           <Paper elevation={0} sx={{
             borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`, bgcolor: "#fff", overflow: 'hidden'
@@ -228,6 +263,8 @@ const MentorDashboard = () => {
                 My Assigned Batches
               </Typography>
             </Box>
+
+
 
             {batches.length === 0 ? (
               <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -348,6 +385,8 @@ const MentorDashboard = () => {
                   </Table>
                 </TableContainer>
 
+
+
                 {/* ✅ Pagination Component */}
                 <TablePagination
                   component="div"
@@ -373,5 +412,7 @@ const MentorDashboard = () => {
     </Box>
   );
 };
+
+
 
 export default MentorDashboard;

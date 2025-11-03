@@ -9,11 +9,13 @@ import {
 } from '@mui/material';
 import {
   Visibility, Assignment, People, CheckCircle, School, Dashboard as DashboardIcon, Menu as MenuIcon, Close,
-  CalendarToday, Email, Phone, GradeOutlined, AddTask,
+  CalendarToday, Email, Phone, GradeOutlined, AddTask, RateReview,
 } from '@mui/icons-material';
+
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
+
 
 const BatchList = () => {
   const [batches, setBatches] = useState([]);
@@ -36,14 +38,19 @@ const BatchList = () => {
   
   const navigate = useNavigate();
 
+
+  // ✅ Added Weekly Review to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
     { id: 'batches', label: 'My Batches', icon: People, path: '/mentor/batches' },
     { id: 'create-task', label: 'Create Task', icon: AddTask, path: '/mentor/create-task' },
     { id: 'tasks', label: 'Tasks', icon: Assignment, path: '/mentor/tasks' },
+    { id: 'weekly-review', label: 'Weekly Review', icon: RateReview, path: '/mentor/weekly-review' },
   ];
 
+
   useEffect(() => { fetchBatches(); }, []);
+
 
   const fetchBatches = async () => {
     try {
@@ -52,25 +59,30 @@ const BatchList = () => {
     } catch (error) { } finally { setLoading(false); }
   };
 
+
   // ✅ Pagination handlers for main table
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
+
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
+
   // ✅ Pagination handlers for dialog tables
   const handleDialogChangePage = (event, newPage) => {
     setDialogPage(newPage);
   };
 
+
   const handleDialogChangeRowsPerPage = (event) => {
     setDialogRowsPerPage(parseInt(event.target.value, 10));
     setDialogPage(0);
   };
+
 
   // ✅ Calculate paginated data
   const paginatedBatches = batches.slice(
@@ -78,14 +90,16 @@ const BatchList = () => {
     page * rowsPerPage + rowsPerPage
   );
 
+
   const paginatedDialogData = dialogContent === 'students' 
     ? batchStudents.slice(dialogPage * dialogRowsPerPage, dialogPage * dialogRowsPerPage + dialogRowsPerPage)
     : batchTasks.slice(dialogPage * dialogRowsPerPage, dialogPage * dialogRowsPerPage + dialogRowsPerPage);
 
+
   const handleViewStudents = async (batch) => {
     setSelectedBatch(batch);
     setDialogContent('students');
-    setDialogPage(0); // Reset dialog pagination
+    setDialogPage(0);
     try {
       const response = await API.get(`/courses/batches/${batch.id}/students/`);
       setBatchStudents(response.data.students || []);
@@ -93,16 +107,18 @@ const BatchList = () => {
     } catch (error) { }
   };
 
+
   const handleViewTasks = async (batch) => {
     setSelectedBatch(batch);
     setDialogContent('tasks');
-    setDialogPage(0); // Reset dialog pagination
+    setDialogPage(0);
     try {
       const response = await API.get(`/tasks/mentor/batch/${batch.id}/tasks/`);
       setBatchTasks(response.data);
       setOpenDialog(true);
     } catch (error) { }
   };
+
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
@@ -112,11 +128,13 @@ const BatchList = () => {
     setDialogPage(0);
   };
 
+
   const getInitials = (firstName, lastName) => (
     `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
   );
 
-  // ✅ Simplified Sidebar - matching admin pages exactly
+
+  // ✅ Sidebar with Weekly Review
   const Sidebar = () => (
     <Box
       sx={{
@@ -147,7 +165,9 @@ const BatchList = () => {
         </IconButton>
       </Box>
 
+
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+
 
       {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
@@ -187,6 +207,7 @@ const BatchList = () => {
     </Box>
   );
 
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -197,6 +218,7 @@ const BatchList = () => {
       </Box>
     );
   }
+
 
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -391,7 +413,8 @@ const BatchList = () => {
               </Table>
             </TableContainer>
 
-            {/* ✅ Pagination for main table */}
+
+            {/* Pagination for main table */}
             {batches.length > 0 && (
               <TablePagination
                 component="div"
@@ -413,6 +436,7 @@ const BatchList = () => {
           </Paper>
         </Container>
       </Box>
+
 
       {/* Students/Tasks Dialog */}
       <Dialog
@@ -546,7 +570,7 @@ const BatchList = () => {
                                 size="small"
                                 onClick={() => {
                                   handleCloseDialog();
-                                  navigate(`/mentor/student/${student.id}`);
+                                  navigate(`/mentor/batch/${selectedBatch.id}/student/${student.id}`);
                                 }}
                                 sx={{
                                   border: `1px solid ${BLUE}`,
@@ -565,7 +589,7 @@ const BatchList = () => {
                   </Table>
                 </TableContainer>
 
-                {/* ✅ Pagination for students table */}
+
                 <TablePagination
                   component="div"
                   count={batchStudents.length}
@@ -675,7 +699,7 @@ const BatchList = () => {
                   </Table>
                 </TableContainer>
 
-                {/* ✅ Pagination for tasks table */}
+
                 <TablePagination
                   component="div"
                   count={batchTasks.length}
@@ -705,5 +729,6 @@ const BatchList = () => {
     </Box>
   );
 };
+
 
 export default BatchList;

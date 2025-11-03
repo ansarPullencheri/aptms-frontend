@@ -24,12 +24,17 @@ import GradeSubmissions from './components/mentor/GradeSubmissions';
 import StudentDetail from './components/mentor/StudentDetail';
 import MentorCreateTask from './components/mentor/CreateTask';
 import MentorTasks from './components/mentor/MentorTasks';
+import MentorReview from './components/mentor/MentorReview'; 
+import WeeklyProgressReview from './components/mentor/WeeklyProgressReview'; 
+import StudentProgressHistory from './components/mentor/StudentProgressHistory';
+import MentorReviewsView from './components/mentor/MentorReviewsView';
 
 // Student Components
 import StudentDashboard from './components/student/StudentDashboard';
 import StudentTasks from './components/student/StudentTasks';
 import TaskSubmission from './components/student/TaskSubmission';
 import StudentSubmissions from './components/student/StudentSubmissions';
+import StudentProgressFeedback from './components/student/StudentProgressFeedback';
 
 // Common Components
 import Navbar from './components/common/Navbar';
@@ -155,6 +160,27 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        
+        {/* ✅ Task Submission Review Route */}
+        <Route
+          path="/mentor/review/:submissionId"
+          element={
+            <ProtectedRoute allowedRoles={['mentor']}>
+              <MentorReview />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* ✅ Weekly Progress Review Route */}
+        <Route
+          path="/mentor/weekly-review"
+          element={
+            <ProtectedRoute allowedRoles={['mentor']}>
+              <WeeklyProgressReview />
+            </ProtectedRoute>
+          }
+        />
+        
         <Route
           path="/mentor/student/:studentId"
           element={
@@ -179,6 +205,23 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/mentor/student-progress/:batchId/:studentId"
+          element={
+            <ProtectedRoute allowedRoles={['mentor']}>
+              <StudentProgressHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentor/reviews"
+          element={
+            <ProtectedRoute allowedRoles={['mentor']}>
+              <MentorReviewsView />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Student Routes */}
         <Route
@@ -210,6 +253,14 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['student']}>
               <StudentSubmissions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/progress-feedback"
+          element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <StudentProgressFeedback />
             </ProtectedRoute>
           }
         />

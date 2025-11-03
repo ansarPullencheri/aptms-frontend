@@ -19,6 +19,7 @@ import {
   TableHead,
   TableRow,
   Avatar,
+  Divider,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -26,11 +27,18 @@ import {
   Pending,
   Download,
   Grade,
+  VisibilityOutlined,
 } from '@mui/icons-material';
 
+const BLUE = "#1565c0";
+const LIGHT_BLUE = "#e3f2fd";
+const GREEN = "#009688";
+
 const StudentDetail = () => {
-  const { studentId } = useParams();
+  // ✅ GET batchId from params
+  const { batchId, studentId } = useParams();
   const navigate = useNavigate();
+  
   const [student, setStudent] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,60 +90,102 @@ const StudentDetail = () => {
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, borderRadius: 2 }}
       >
         Back to Batches
       </Button>
 
       {/* Student Info Card */}
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 2, border: `1.5px solid ${LIGHT_BLUE}` }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ width: 64, height: 64, bgcolor: 'primary.main' }}>
+          <Avatar sx={{ width: 64, height: 64, bgcolor: BLUE }}>
             {student.first_name?.[0]}{student.last_name?.[0]}
           </Avatar>
-          <Box>
-            <Typography variant="h4">
+          <Box flex={1}>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE }}>
               {student.first_name} {student.last_name}
             </Typography>
             <Typography color="textSecondary">
               @{student.username} • {student.email}
             </Typography>
           </Box>
+
+          {/* ✅ VIEW PROGRESS BUTTON - Pass batchId correctly */}
+          <Button
+            variant="outlined"
+            startIcon={<VisibilityOutlined />}
+            onClick={() => navigate(`/mentor/student-progress/${batchId}/${studentId}`)}
+            sx={{
+              borderColor: GREEN,
+              color: GREEN,
+              borderRadius: 2,
+              fontWeight: 700,
+              '&:hover': { 
+                bgcolor: GREEN, 
+                color: '#fff',
+                borderColor: GREEN 
+              },
+            }}
+          >
+            📋 View Progress
+          </Button>
         </Box>
 
-        <Grid container spacing={2} sx={{ mt: 2 }}>
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined">
+        <Divider sx={{ my: 2 }} />
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={3}>
+            <Card variant="outlined" sx={{ borderRadius: 2 }}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
+                <Typography color="textSecondary" gutterBottom variant="caption">
                   Total Submissions
                 </Typography>
-                <Typography variant="h4" color="primary.main">
+                <Typography variant="h4" color="primary.main" sx={{ fontWeight: 700 }}>
                   {submissions.length}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined">
+          <Grid item xs={12} sm={3}>
+            <Card variant="outlined" sx={{ borderRadius: 2 }}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
+                <Typography color="textSecondary" gutterBottom variant="caption">
                   Graded
                 </Typography>
-                <Typography variant="h4" color="success.main">
+                <Typography variant="h4" sx={{ color: GREEN, fontWeight: 700 }}>
                   {submissions.filter(s => s.status === 'graded').length}
                 </Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card variant="outlined">
+          <Grid item xs={12} sm={3}>
+            <Card variant="outlined" sx={{ borderRadius: 2 }}>
               <CardContent>
-                <Typography color="textSecondary" gutterBottom>
+                <Typography color="textSecondary" gutterBottom variant="caption">
                   Pending Grading
                 </Typography>
-                <Typography variant="h4" color="warning.main">
+                <Typography variant="h4" sx={{ color: '#ff9800', fontWeight: 700 }}>
                   {submissions.filter(s => s.status !== 'graded').length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={3}>
+            <Card variant="outlined" sx={{ borderRadius: 2 }}>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom variant="caption">
+                  Average Score
+                </Typography>
+                <Typography variant="h4" sx={{ color: BLUE, fontWeight: 700 }}>
+                  {submissions.length > 0
+                    ? Math.round(
+                        submissions
+                          .filter(s => s.marks_obtained !== null)
+                          .reduce((sum, s) => sum + (s.marks_obtained / s.max_marks) * 100, 0) /
+                          submissions.filter(s => s.marks_obtained !== null).length
+                      )
+                    : 0}
+                  %
                 </Typography>
               </CardContent>
             </Card>
@@ -144,9 +194,9 @@ const StudentDetail = () => {
       </Paper>
 
       {/* Submissions Table */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Submitted Tasks
+      <Paper sx={{ p: 3, borderRadius: 2, border: `1.5px solid ${LIGHT_BLUE}` }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: BLUE, mb: 2 }}>
+          📝 Submitted Tasks
         </Typography>
 
         {submissions.length === 0 ? (
@@ -159,18 +209,25 @@ const StudentDetail = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>Task</TableCell>
-                  <TableCell>Course</TableCell>
-                  <TableCell>Submitted At</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="center">Marks</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
+                  <TableCell sx={{ fontWeight: 700, color: BLUE }}>Task</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: BLUE }}>Submitted At</TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Marks</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {submissions.map((submission) => (
-                  <TableRow key={submission.id} hover>
+                  <TableRow 
+                    key={submission.id} 
+                    hover
+                    sx={{
+                      '&:hover': { bgcolor: LIGHT_BLUE },
+                      transition: 'background-color 0.2s',
+                    }}
+                  >
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
                         {submission.task_title}
@@ -186,7 +243,11 @@ const StudentDetail = () => {
                         <Chip
                           label={`${submission.marks_obtained}/${submission.max_marks}`}
                           size="small"
-                          color="success"
+                          sx={{
+                            bgcolor: GREEN,
+                            color: '#fff',
+                            fontWeight: 700,
+                          }}
                         />
                       ) : (
                         <Typography variant="caption" color="textSecondary">
@@ -195,27 +256,41 @@ const StudentDetail = () => {
                       )}
                     </TableCell>
                     <TableCell align="center">
-                      {submission.submission_file && (
-                        <Button
-                          size="small"
-                          startIcon={<Download />}
-                          href={submission.submission_file}
-                          target="_blank"
-                        >
-                          Download
-                        </Button>
-                      )}
-                      {submission.status !== 'graded' && (
-                        <Button
-                          size="small"
-                          color="warning"
-                          startIcon={<Grade />}
-                          onClick={() => navigate(`/mentor/grade-submission/${submission.id}`)}
-                          sx={{ ml: 1 }}
-                        >
-                          Grade
-                        </Button>
-                      )}
+                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {submission.submission_file && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Download />}
+                            href={submission.submission_file}
+                            target="_blank"
+                            sx={{
+                              borderColor: BLUE,
+                              color: BLUE,
+                              borderRadius: 1,
+                              '&:hover': { bgcolor: LIGHT_BLUE }
+                            }}
+                          >
+                            Download
+                          </Button>
+                        )}
+                        {submission.status !== 'graded' && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            startIcon={<Grade />}
+                            onClick={() => navigate(`/mentor/review/${submission.id}`)}
+                            sx={{
+                              bgcolor: '#ff9800',
+                              color: '#fff',
+                              borderRadius: 1,
+                              '&:hover': { bgcolor: '#e68900' }
+                            }}
+                          >
+                            Grade
+                          </Button>
+                        )}
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

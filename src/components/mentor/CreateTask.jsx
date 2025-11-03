@@ -7,11 +7,13 @@ import {
   ListItemButton, ListItemIcon, ListItemText, Divider, IconButton, Switch,
 } from '@mui/material';
 import { Add, ArrowBack, School, Dashboard as DashboardIcon, People, Assignment, GradeOutlined,
-  Menu as MenuIcon, Close, CalendarToday, Grade,
+  Menu as MenuIcon, Close, CalendarToday, Grade, RateReview,
 } from '@mui/icons-material';
+
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
+
 
 const MentorCreateTask = () => {
   const navigate = useNavigate();
@@ -35,15 +37,20 @@ const MentorCreateTask = () => {
     release_date: '',
   });
 
+
+  // ✅ Added Weekly Review to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
     { id: 'batches', label: 'My Batches', icon: People, path: '/mentor/batches' },
     { id: 'create-task', label: 'Create Task', icon: Add, path: '/mentor/create-task' },
     { id: 'tasks', label: 'Tasks', icon: Assignment, path: '/mentor/tasks' },
+    { id: 'weekly-review', label: 'Weekly Review', icon: RateReview, path: '/mentor/weekly-review' },
   ];
+
 
   useEffect(() => { fetchMentorBatches(); }, []);
   useEffect(() => { if (formData.batch_id) fetchBatchStudents(formData.batch_id); }, [formData.batch_id]);
+
 
   const fetchMentorBatches = async () => {
     try {
@@ -61,6 +68,7 @@ const MentorCreateTask = () => {
       setStudents(response.data.students || []);
     } catch (error) { setMessage({ type: 'error', text: 'Failed to fetch students' }); }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +92,8 @@ const MentorCreateTask = () => {
     }
   };
 
-  // ✅ Simplified Sidebar - matching admin pages exactly
+
+  // ✅ Sidebar with Weekly Review
   const Sidebar = () => (
     <Box sx={{
       width: sidebarOpen ? 220 : 70,
@@ -114,7 +123,9 @@ const MentorCreateTask = () => {
         </IconButton>
       </Box>
 
+
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+
 
       {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
@@ -154,7 +165,9 @@ const MentorCreateTask = () => {
     </Box>
   );
 
+
   const selectedBatch = batches.find(b => b.id === formData.batch_id);
+
 
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -172,6 +185,7 @@ const MentorCreateTask = () => {
           >
             Back to Batches
           </Button>
+
 
           <Paper
             elevation={0}
@@ -193,6 +207,7 @@ const MentorCreateTask = () => {
             </Box>
           </Paper>
 
+
           {message.text && (
             <Alert
               severity={message.type}
@@ -206,6 +221,7 @@ const MentorCreateTask = () => {
               {message.text}
             </Alert>
           )}
+
 
           <Paper
             elevation={0}
@@ -301,6 +317,7 @@ const MentorCreateTask = () => {
                     />
                   </Box>
                 </Grid>
+
 
                 {!assignToAll && (
                   <Grid item xs={12}>
@@ -507,5 +524,6 @@ const MentorCreateTask = () => {
     </Box>
   );
 };
+
 
 export default MentorCreateTask;

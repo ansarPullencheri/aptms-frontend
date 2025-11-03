@@ -8,11 +8,13 @@ import {
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon, Group, Assignment, GradeOutlined, Menu as MenuIcon, Close,
-  School, AddTask, CalendarToday, People
+  School, AddTask, CalendarToday, People, RateReview,
 } from '@mui/icons-material';
+
 
 const BLUE = "#1565c0";
 const LIGHT_BLUE = "#e3f2fd";
+
 
 const MentorTasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -26,14 +28,19 @@ const MentorTasks = () => {
   
   const navigate = useNavigate();
 
+
+  // ✅ Added Weekly Review to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
     { id: 'batches', label: 'My Batches', icon: Group, path: '/mentor/batches' },
     { id: 'create-task', label: 'Create Task', icon: AddTask, path: '/mentor/create-task' },
     { id: 'tasks', label: 'Tasks', icon: Assignment, path: '/mentor/tasks' },
+    { id: 'weekly-review', label: 'Weekly Review', icon: RateReview, path: '/mentor/weekly-review' },
   ];
 
+
   useEffect(() => { fetchTasks(); }, []);
+
 
   const fetchTasks = async () => {
     try {
@@ -42,15 +49,18 @@ const MentorTasks = () => {
     } catch (error) { } finally { setLoading(false); }
   };
 
+
   // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
 
   // ✅ Calculate paginated data
   const paginatedTasks = tasks.slice(
@@ -58,9 +68,11 @@ const MentorTasks = () => {
     page * rowsPerPage + rowsPerPage
   );
 
+
   const isOverdue = (dueDate) => new Date(dueDate) < new Date();
 
-  // ✅ Simplified Sidebar - matching admin pages exactly
+
+  // ✅ Sidebar with Weekly Review
   const Sidebar = () => (
     <Box
       sx={{
@@ -91,7 +103,9 @@ const MentorTasks = () => {
         </IconButton>
       </Box>
 
+
       <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+
 
       {/* Navigation Items */}
       <List sx={{ flex: 1, px: 1, py: 2 }}>
@@ -131,6 +145,7 @@ const MentorTasks = () => {
     </Box>
   );
 
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -141,6 +156,7 @@ const MentorTasks = () => {
       </Box>
     );
   }
+
 
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
@@ -200,6 +216,7 @@ const MentorTasks = () => {
               </Box>
             </Box>
           </Paper>
+
 
           <Paper elevation={0} sx={{
             borderRadius: 3,
@@ -412,6 +429,7 @@ const MentorTasks = () => {
               </Table>
             </TableContainer>
 
+
             {/* ✅ Pagination Component */}
             {tasks.length > 0 && (
               <TablePagination
@@ -437,5 +455,6 @@ const MentorTasks = () => {
     </Box>
   );
 };
+
 
 export default MentorTasks;
