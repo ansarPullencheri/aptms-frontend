@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Container,
   Paper,
   Typography,
   TextField,
@@ -19,6 +18,7 @@ import {
   Divider,
   Badge,
   InputAdornment,
+  CircularProgress,
 } from '@mui/material';
 import {
   School,
@@ -34,12 +34,11 @@ import {
   Menu as MenuIcon,
   Close,
   Save,
-  AccountCircle,
+  InfoOutlined,
 } from '@mui/icons-material';
 
-// Blue theme constants
-const BLUE = '#1565c0';
-const LIGHT_BLUE = '#e3f2fd';
+const BLUE = '#1976d2';
+const LIGHT_GREY = '#f5f7fa';
 
 const CreateMentor = () => {
   const [formData, setFormData] = useState({
@@ -58,7 +57,7 @@ const CreateMentor = () => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
-    { id: 'students', label: 'Manage users', icon: People, path: '/admin/manage-users' },
+    { id: 'students', label: 'Manage Users', icon: People, path: '/admin/manage-users' },
     { id: 'mentors', label: 'Mentors', icon: School, path: '/admin/create-mentor' },
     { id: 'courses', label: 'Courses', icon: Assignment, path: '/admin/manage-courses' },
     { id: 'batches', label: 'Batches', icon: School, path: '/admin/manage-batches' },
@@ -67,17 +66,13 @@ const CreateMentor = () => {
   ];
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: '', text: '' });
-
     try {
       await API.post('/auth/create-mentor/', formData);
       setMessage({ type: 'success', text: 'Mentor created successfully!' });
@@ -89,6 +84,7 @@ const CreateMentor = () => {
         last_name: '',
         phone: '',
       });
+      setTimeout(() => navigate('/admin/manage-users'), 2000);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -99,47 +95,45 @@ const CreateMentor = () => {
     }
   };
 
-  // ✅ Simplified Sidebar - matching AdminDashboard
   const Sidebar = () => (
     <Box
       sx={{
         width: sidebarOpen ? 220 : 70,
-        height: 'calc(100vh - 64px)',
+        height: '100vh',
         bgcolor: '#fff',
-        color: '#333',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'width 0.25s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         display: 'flex',
         flexDirection: 'column',
-        position: 'fixed',
-        left: 0,
-        top: 64,
-        zIndex: 1000,
-        borderRight: `2px solid ${LIGHT_BLUE}`,
-        boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-        transition: 'width 0.18s',
-        p: 0,
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
+        zIndex: 10,
       }}
     >
-      {/* Toggle Button */}
       <Box
         sx={{
-          p: 2,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: sidebarOpen ? 'flex-end' : 'center',
+          justifyContent: sidebarOpen ? 'space-between' : 'center',
+          p: 2,
         }}
       >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Admin
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
-
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
-
-      {/* Navigation Items */}
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <Divider />
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeNav === item.id;
+          const active = activeNav === item.id;
           return (
             <ListItemButton
               key={item.id}
@@ -148,30 +142,22 @@ const CreateMentor = () => {
                 navigate(item.path);
               }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: active ? BLUE : 'transparent',
+                '&:hover': { backgroundColor: active ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE, minWidth: 40 }}>
-                {item.badge ? (
-                  <Badge badgeContent={item.badge} color="error">
-                    <Icon />
-                  </Badge>
-                ) : (
-                  <Icon />
-                )}
+              <ListItemIcon sx={{ color: active ? '#fff' : BLUE }}>
+                <Icon fontSize="small" />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? '#fff' : BLUE,
+                    fontWeight: active ? 600 : 400,
+                    color: active ? '#fff' : '#333',
                   }}
                 />
               )}
@@ -183,42 +169,26 @@ const CreateMentor = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
-        <Container maxWidth="md" sx={{ py: 4 }}>
-          {/* Header */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3,
-              mb: 4,
-              borderRadius: 3,
-              bgcolor: '#fff',
-              border: `1.5px solid ${BLUE}`,
-            }}
-          >
-            <Box display="flex" alignItems="center" gap={2}>
-              <Avatar
-                sx={{
-                  width: 56,
-                  height: 56,
-                  bgcolor: BLUE,
-                  color: '#fff',
-                }}
-              >
-                <School sx={{ fontSize: 32 }} />
-              </Avatar>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
-                  Create New Mentor
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#223a5e' }}>
-                  Add a new mentor to the system with their credentials and information
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
+      
+      {/* Main Content */}
+      <Box
+        sx={{
+          flex: 1,
+          ml: sidebarOpen ? '220px' : '70px',
+          transition: 'margin 0.25s ease',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          py: 4,
+          px: 2,
+        }}
+      >
+        {/* Form Container */}
+        <Box sx={{ width: '100%', maxWidth: '600px' }}>
+         
 
           {/* Alert Message */}
           {message.text && (
@@ -226,9 +196,7 @@ const CreateMentor = () => {
               severity={message.type}
               sx={{
                 mb: 3,
-                borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(21,101,192,0.08)',
-                color: message.type === 'error' ? '#d32f2f' : BLUE,
+                borderRadius: 3,
               }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
@@ -236,31 +204,23 @@ const CreateMentor = () => {
             </Alert>
           )}
 
-          {/* Form */}
+          {/* Form Card */}
           <Paper
             elevation={0}
             sx={{
               p: 4,
               borderRadius: 3,
-              border: `1.5px solid ${LIGHT_BLUE}`,
               bgcolor: '#fff',
-              boxShadow: '0 2px 8px rgba(21,101,192,0.07)',
+              border: '1px solid #e0e0e0',
+              mb: 3,
             }}
           >
             <Box component="form" onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-                {/* Account Information Section */}
-                <Grid item xs={12}>
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <AccountCircle sx={{ color: BLUE }} />
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: BLUE }}>
-                      Mentor Information
-                    </Typography>
-                  </Box>
-                  <Divider sx={{ mb: 3, bgcolor: LIGHT_BLUE }} />
-                </Grid>
+              <Grid container spacing={2.5}>
+                
 
-                <Grid item xs={12} sm={6}>
+                {/* Row 1: First Name, Last Name, Phone */}
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="First Name"
@@ -271,7 +231,7 @@ const CreateMentor = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Person sx={{ color: BLUE }} />
+                          <Person sx={{ color: BLUE, fontSize: 20 }} />
                         </InputAdornment>
                       ),
                     }}
@@ -283,7 +243,7 @@ const CreateMentor = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Last Name"
@@ -294,7 +254,7 @@ const CreateMentor = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Person sx={{ color: BLUE }} />
+                          <Person sx={{ color: BLUE, fontSize: 20 }} />
                         </InputAdornment>
                       ),
                     }}
@@ -306,7 +266,37 @@ const CreateMentor = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Phone sx={{ color: BLUE, fontSize: 20 }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      },
+                    }}
+                  />
+                </Grid>
+
+                {/* Divider */}
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                </Grid>
+
+                
+
+                {/* Row 2: Username, Email, Password */}
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Username"
@@ -317,7 +307,7 @@ const CreateMentor = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Person sx={{ color: BLUE }} />
+                          <Person sx={{ color: BLUE, fontSize: 20 }} />
                         </InputAdornment>
                       ),
                     }}
@@ -329,7 +319,7 @@ const CreateMentor = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -341,7 +331,7 @@ const CreateMentor = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Email sx={{ color: BLUE }} />
+                          <Email sx={{ color: BLUE, fontSize: 20 }} />
                         </InputAdornment>
                       ),
                     }}
@@ -353,7 +343,7 @@ const CreateMentor = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Password"
@@ -365,7 +355,7 @@ const CreateMentor = () => {
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <Lock sx={{ color: BLUE }} />
+                          <Lock sx={{ color: BLUE, fontSize: 20 }} />
                         </InputAdornment>
                       ),
                     }}
@@ -377,41 +367,19 @@ const CreateMentor = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Phone sx={{ color: BLUE }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
-                </Grid>
-
-                {/* Submit Button */}
+                {/* Action Buttons */}
                 <Grid item xs={12}>
-                  <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
+                  <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
                     <Button
                       variant="outlined"
-                      size="large"
                       onClick={() => navigate('/admin/manage-users')}
                       sx={{
                         borderRadius: 2,
                         px: 4,
                         color: BLUE,
                         borderColor: BLUE,
-                        '&:hover': { bgcolor: LIGHT_BLUE },
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: LIGHT_GREY },
                       }}
                     >
                       Cancel
@@ -419,16 +387,20 @@ const CreateMentor = () => {
                     <Button
                       type="submit"
                       variant="contained"
-                      size="large"
                       disabled={loading}
-                      startIcon={<Save />}
+                      startIcon={
+                        loading ? (
+                          <CircularProgress size={20} sx={{ color: '#fff' }} />
+                        ) : (
+                          <Save />
+                        )
+                      }
                       sx={{
-                        background: BLUE,
+                        bgcolor: BLUE,
                         borderRadius: 2,
                         px: 4,
-                        color: '#fff',
-                        '&:hover': { bgcolor: '#003c8f' },
-                        transition: 'all 0.3s',
+                        fontWeight: 600,
+                        '&:hover': { bgcolor: '#1565c0' },
                       }}
                     >
                       {loading ? 'Creating...' : 'Create Mentor'}
@@ -438,7 +410,9 @@ const CreateMentor = () => {
               </Grid>
             </Box>
           </Paper>
-        </Container>
+
+          
+        </Box>
       </Box>
     </Box>
   );

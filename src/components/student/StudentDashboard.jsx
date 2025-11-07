@@ -5,27 +5,25 @@ import {
   Container, Grid, Paper, Typography, Card, CardContent, Box, CircularProgress,
   Avatar, Chip, List, ListItemButton, ListItemIcon, ListItemText, Divider,
   IconButton, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Tooltip,
+  Tooltip, TablePagination,
 } from '@mui/material';
 import {
   Assignment, CheckCircle, PendingActions, TrendingUp, School, Dashboard as DashboardIcon,
-  Menu as MenuIcon, Close, CalendarToday, Grade, Person, Download, RateReview,
+  Menu as MenuIcon, Close, CalendarToday, Grade, Person, Download, RateReview, Visibility,
 } from '@mui/icons-material';
 
-
-const BLUE = "#1565c0";
-const LIGHT_BLUE = "#e3f2fd";
-
+const BLUE = "#1976d2";
+const LIGHT_GREY = "#f5f7fa";
 
 const StudentDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('dashboard');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const navigate = useNavigate();
 
-
-  // ✅ Added Progress Feedback to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/student/dashboard' },
     { id: 'tasks', label: 'My Tasks', icon: Assignment, path: '/student/tasks' },
@@ -33,9 +31,7 @@ const StudentDashboard = () => {
     { id: 'feedback', label: 'My Feedback', icon: RateReview, path: '/student/progress-feedback' },
   ];
 
-
   useEffect(() => { fetchDashboard(); }, []);
-
 
   const fetchDashboard = async () => {
     try {
@@ -48,7 +44,6 @@ const StudentDashboard = () => {
     }
   };
 
-
   const getInitials = (name) => {
     if (!name) return 'S';
     const names = name.split(' ');
@@ -57,8 +52,6 @@ const StudentDashboard = () => {
       : names[0][0].toUpperCase();
   };
 
-
-  // ✅ Download syllabus handler
   const handleDownloadSyllabus = async (courseId, courseName) => {
     try {
       const response = await API.get(`/courses/${courseId}/download-syllabus/`, {
@@ -79,68 +72,82 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleChangePage = (event, newPage) => setPage(newPage);
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
-  // ✅ Sidebar with Progress Feedback
+  const paginatedSubmissions = dashboardData?.recent_submissions.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  ) || [];
+
   const Sidebar = () => (
     <Box
       sx={{
         width: sidebarOpen ? 220 : 70,
-        height: 'calc(100vh - 64px)',
+        height: '100vh',
         bgcolor: "#fff",
-        color: '#333',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
+        borderRight: "1px solid #e0e0e0",
+        transition: "width 0.25s ease",
+        position: "fixed",
+        top: 0,
         left: 0,
-        top: 64,
-        zIndex: 1000,
-        borderRight: `2px solid ${LIGHT_BLUE}`,
-        boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-        transition: 'width 0.18s',
-        p: 0,
-      }}>
-      <Box sx={{
-        p: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarOpen ? 'flex-end' : 'center',
-      }}>
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "2px 0 6px rgba(0,0,0,0.04)",
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: sidebarOpen ? "space-between" : "center",
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Student
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
 
+      <Divider />
 
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
-
-
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeNav === item.id;
+          const active = activeNav === item.id;
           return (
             <ListItemButton
               key={item.id}
-              onClick={() => { setActiveNav(item.id); navigate(item.path); }}
+              onClick={() => {
+                setActiveNav(item.id);
+                navigate(item.path);
+              }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: active ? BLUE : "transparent",
+                "&:hover": { backgroundColor: active ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? "#fff" : BLUE, minWidth: 40 }}>
-                <Icon />
+              <ListItemIcon sx={{ color: active ? "#fff" : BLUE }}>
+                <Icon fontSize="small" />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? '#fff' : BLUE
+                    fontWeight: active ? 600 : 400,
+                    color: active ? "#fff" : "#333",
                   }}
                 />
               )}
@@ -151,326 +158,231 @@ const StudentDashboard = () => {
     </Box>
   );
 
-
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
-        <Sidebar />
-        <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <CircularProgress sx={{ color: BLUE }} />
-        </Box>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: LIGHT_GREY,
+        }}
+      >
+        <CircularProgress sx={{ color: BLUE }} />
       </Box>
     );
   }
-
 
   const statCards = [
     {
       title: 'Total Tasks',
       value: dashboardData?.task_statistics.total_assigned || 0,
       icon: Assignment,
-      color: BLUE,
-      bgLight: LIGHT_BLUE,
     },
     {
       title: 'Submitted',
       value: dashboardData?.task_statistics.total_submitted || 0,
       icon: CheckCircle,
-      color: "#009688",
-      bgLight: "#b2dfdb",
     },
     {
       title: 'Pending',
       value: dashboardData?.task_statistics.pending_tasks || 0,
       icon: PendingActions,
-      color: "#fbbc04",
-      bgLight: "#fffde7",
     },
     {
       title: 'Overall Score',
       value: `${dashboardData?.academic_progress.overall_percentage || 0}%`,
       icon: TrendingUp,
-      color: "#1976d2",
-      bgLight: "#e3f2fd",
     },
   ];
 
-
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
-        <Container maxWidth="xl" sx={{ py: 4 }}>
-          {/* Welcome Header */}
-          <Paper
-            elevation={0}
-            sx={{
-              p: 3, mb: 4, borderRadius: 3,
-              bgcolor: "#fff",
-              border: `1.5px solid ${BLUE}`,
-              color: BLUE
-            }}>
-            <Box display="flex" alignItems="center" gap={2}>
-              <Avatar sx={{
-                width: 64, height: 64, bgcolor: BLUE, color: "#fff",
-                fontSize: '1.5rem', fontWeight: 700,
-              }}>
-                {getInitials(dashboardData?.student_info.name)}
-              </Avatar>
-              <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
-                  Welcome back, {dashboardData?.student_info.name}!
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#223a5e" }}>
-                  Here's your learning progress overview
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
 
+      <Box sx={{ flex: 1, ml: sidebarOpen ? "220px" : "70px", transition: "margin 0.25s ease" }}>
+        <Container maxWidth="xl" sx={{ py: 5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#222", mb: 4 }}>
+            Welcome Back, {dashboardData?.student_info.name} 👋
+          </Typography>
 
-          {/* Stats Cards */}
+          {/* Stats */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            {statCards.map((stat, index) => {
+            {statCards.map((stat, i) => {
               const Icon = stat.icon;
               return (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Card elevation={0}
+                <Grid item xs={12} sm={6} md={3} key={i}>
+                  <Card
+                    elevation={0}
                     sx={{
-                      height: '100%',
                       borderRadius: 3,
-                      border: `1.5px solid ${LIGHT_BLUE}`,
+                      p: 2.5,
                       bgcolor: "#fff",
-                      transition: 'all 0.3s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 12px 24px rgba(21,101,192,0.11)',
-                      },
-                    }}>
-                    <CardContent sx={{ p: 3 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box>
-                          <Typography variant="body2" sx={{ color: BLUE, mb: 1 }}>
-                            {stat.title}
-                          </Typography>
-                          <Typography variant="h3" sx={{ fontWeight: 700, color: stat.color }}>
-                            {stat.value}
-                          </Typography>
-                        </Box>
-                        <Box sx={{
-                          p: 1.5, borderRadius: 2, bgcolor: stat.bgLight,
-                        }}>
-                          <Icon sx={{ fontSize: 32, color: stat.color }} />
-                        </Box>
+                      border: "1px solid #e0e0e0",
+                      "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.08)" },
+                      transition: "0.3s",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Box
+                        sx={{
+                          p: 1.2,
+                          borderRadius: 2,
+                          bgcolor: LIGHT_GREY,
+                          color: BLUE,
+                          display: "flex",
+                        }}
+                      >
+                        <Icon />
                       </Box>
-                    </CardContent>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {stat.title}
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#222" }}>
+                          {stat.value}
+                        </Typography>
+                      </Box>
+                    </Box>
                   </Card>
                 </Grid>
               );
             })}
           </Grid>
 
-
           <Grid container spacing={3}>
-            {/* Enrolled Batches */}
-            <Grid item xs={12} md={6}>
+            {/* Enrolled Batches Table */}
+            <Grid item xs={12} lg={6}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 3, borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`,
-                  height: '100%', bgcolor: "#fff"
-                }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: BLUE }}>
+                  borderRadius: 3,
+                  border: "1px solid #e0e0e0",
+                  bgcolor: "#fff",
+                  height: '100%',
+                }}
+              >
+                <Box sx={{ p: 3, borderBottom: "1px solid #e0e0e0" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: "#222" }}>
                     Enrolled Batches
                   </Typography>
-                  <Chip
-                    label={dashboardData?.enrolled_batches.length || 0}
-                    size="small"
-                    sx={{
-                      bgcolor: BLUE, color: "#fff", fontWeight: 700,
-                    }}
-                  />
                 </Box>
+
                 {dashboardData?.enrolled_batches.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <School sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                    <Typography color="#223a5e">
-                      No batches enrolled yet
+                  <Box sx={{ textAlign: "center", py: 8 }}>
+                    <School sx={{ fontSize: 64, color: "#ccc", mb: 2 }} />
+                    <Typography variant="h6" color="#555">
+                      No Batches Enrolled
                     </Typography>
                   </Box>
                 ) : (
-                  <Paper elevation={0} sx={{ border: `1.5px solid ${LIGHT_BLUE}`, borderRadius: 2 }}>
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Batch Name
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                          {["Batch", "Course", "Mentor", "Syllabus"].map((head) => (
+                            <TableCell key={head} sx={{ fontWeight: 700, color: "#555" }}>
+                              {head}
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Course
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Mentor
-                            </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Syllabus
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {dashboardData?.enrolled_batches.map((batch) => (
+                          <TableRow key={batch.id} hover>
+                            <TableCell>{batch.name}</TableCell>
+                            <TableCell>{batch.course_name}</TableCell>
+                            <TableCell>{batch.mentor_name || 'Not assigned'}</TableCell>
+                            <TableCell>
+                              <Tooltip title="Download Syllabus">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDownloadSyllabus(batch.course_id, batch.course_name)}
+                                  sx={{ color: BLUE }}
+                                >
+                                  <Download fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
                             </TableCell>
                           </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {dashboardData?.enrolled_batches.map((batch) => (
-                            <TableRow
-                              key={batch.id}
-                              sx={{
-                                '&:hover': { bgcolor: LIGHT_BLUE },
-                                transition: 'background-color 0.2s',
-                              }}
-                            >
-                              <TableCell>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {batch.name}
-                                </Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <School sx={{ fontSize: 16, color: BLUE }} />
-                                  <Typography variant="body2" color={BLUE}>
-                                    {batch.course_name}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <Person sx={{ fontSize: 16, color: BLUE }} />
-                                  <Typography variant="body2" color="#223a5e">
-                                    {batch.mentor_name || 'Not assigned'}
-                                  </Typography>
-                                </Box>
-                              </TableCell>
-                              <TableCell align="center">
-                                <Tooltip title="Download Syllabus">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleDownloadSyllabus(batch.course_id, batch.course_name)}
-                                    sx={{
-                                      color: BLUE,
-                                      bgcolor: LIGHT_BLUE,
-                                      '&:hover': { bgcolor: BLUE, color: '#fff' },
-                                      transition: 'all 0.3s'
-                                    }}
-                                  >
-                                    <Download fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Paper>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 )}
               </Paper>
             </Grid>
 
-
-            {/* Recent Submissions */}
-            <Grid item xs={12} md={6}>
+            {/* Recent Submissions Table */}
+            <Grid item xs={12} lg={6}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 3, borderRadius: 3, border: `1.5px solid ${LIGHT_BLUE}`,
-                  height: '100%', bgcolor: "#fff"
-                }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: BLUE }}>
+                  borderRadius: 3,
+                  border: "1px solid #e0e0e0",
+                  bgcolor: "#fff",
+                  height: '100%',
+                }}
+              >
+                <Box sx={{ p: 3, borderBottom: "1px solid #e0e0e0" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: "#222" }}>
                     Recent Submissions
                   </Typography>
-                  <Chip
-                    label={dashboardData?.recent_submissions.length || 0}
-                    size="small"
-                    sx={{
-                      bgcolor: BLUE, color: "#fff", fontWeight: 700,
-                    }}
-                  />
                 </Box>
+
                 {dashboardData?.recent_submissions.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Assignment sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                    <Typography color="#223a5e">
-                      No submissions yet
+                  <Box sx={{ textAlign: "center", py: 8 }}>
+                    <Assignment sx={{ fontSize: 64, color: "#ccc", mb: 2 }} />
+                    <Typography variant="h6" color="#555">
+                      No Submissions Yet
                     </Typography>
                   </Box>
                 ) : (
-                  <Paper elevation={0} sx={{ border: `1.5px solid ${LIGHT_BLUE}`, borderRadius: 2 }}>
+                  <>
                     <TableContainer>
                       <Table>
                         <TableHead>
-                          <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Task
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Submitted
-                            </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
-                              Status
-                            </TableCell>
+                          <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                            {["Task", "Submitted", "Status"].map((head) => (
+                              <TableCell key={head} sx={{ fontWeight: 700, color: "#555" }}>
+                                {head}
+                              </TableCell>
+                            ))}
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {dashboardData?.recent_submissions.map((sub, index) => (
-                            <TableRow
-                              key={index}
-                              sx={{
-                                '&:hover': { bgcolor: LIGHT_BLUE },
-                                transition: 'background-color 0.2s',
-                              }}
-                            >
+                          {paginatedSubmissions.map((sub, index) => (
+                            <TableRow key={index} hover>
                               <TableCell>
                                 <Typography variant="body2" fontWeight={600}>
                                   {sub.task_title}
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                  <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
-                                  <Typography variant="body2" color={BLUE}>
-                                    {new Date(sub.submitted_at).toLocaleDateString()}
-                                  </Typography>
-                                </Box>
+                                <Typography variant="body2" color="text.secondary">
+                                  {new Date(sub.submitted_at).toLocaleDateString()}
+                                </Typography>
                               </TableCell>
-                              <TableCell align="center">
+                              <TableCell>
                                 {sub.is_graded ? (
-                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                                    <Chip
-                                      icon={<Grade sx={{ fontSize: 14 }} />}
-                                      label={`${sub.marks_obtained}/${sub.max_marks}`}
-                                      size="small"
-                                      sx={{
-                                        bgcolor: "#009688", color: "#fff", fontWeight: 700,
-                                      }}
-                                    />
-                                    <LinearProgress
-                                      variant="determinate"
-                                      value={(sub.marks_obtained / sub.max_marks) * 100}
-                                      sx={{
-                                        width: '100%',
-                                        height: 4,
-                                        borderRadius: 3,
-                                        bgcolor: "#b2dfdb",
-                                        '& .MuiLinearProgress-bar': { bgcolor: "#009688", borderRadius: 3 }
-                                      }}
-                                    />
-                                  </Box>
+                                  <Chip
+                                    label={`${sub.marks_obtained}/${sub.max_marks}`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: LIGHT_GREY,
+                                      color: BLUE,
+                                      fontWeight: 600,
+                                    }}
+                                  />
                                 ) : (
                                   <Chip
                                     label="Under Review"
                                     size="small"
                                     sx={{
-                                      bgcolor: "#fbbc04", color: "#fff", fontWeight: 700,
+                                      bgcolor: "#fff3cd",
+                                      color: "#856404",
+                                      fontWeight: 600,
                                     }}
                                   />
                                 )}
@@ -480,7 +392,17 @@ const StudentDashboard = () => {
                         </TableBody>
                       </Table>
                     </TableContainer>
-                  </Paper>
+
+                    <TablePagination
+                      component="div"
+                      count={dashboardData?.recent_submissions.length || 0}
+                      page={page}
+                      onPageChange={handleChangePage}
+                      rowsPerPage={rowsPerPage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      rowsPerPageOptions={[5, 10, 25]}
+                    />
+                  </>
                 )}
               </Paper>
             </Grid>
@@ -490,6 +412,5 @@ const StudentDashboard = () => {
     </Box>
   );
 };
-
 
 export default StudentDashboard;

@@ -2,18 +2,61 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Container, Paper, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button,
-  Chip, Alert, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
-  InputLabel, Select, MenuItem, Grid, Checkbox, ListItemText, Avatar, List, ListItemButton,
-  ListItemIcon, Divider, Badge, IconButton, Tooltip, TablePagination,
+  Container,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Chip,
+  Alert,
+  CircularProgress,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+  Checkbox,
+  ListItemText,
+  Avatar,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  Divider,
+  Badge,
+  IconButton,
+  Tooltip,
+  TablePagination,
 } from '@mui/material';
 import {
-  CheckCircle, Cancel, Person, School, People, Assignment, Task, PersonAdd, Dashboard as DashboardIcon,
-  Menu as MenuIcon, Close, Email, Phone, CalendarToday
+  CheckCircle,
+  Cancel,
+  Person,
+  School,
+  People,
+  Assignment,
+  Task,
+  PersonAdd,
+  Dashboard as DashboardIcon,
+  Menu as MenuIcon,
+  Close,
+  Email,
+  Phone,
+  CalendarToday,
+  Add,
 } from '@mui/icons-material';
 
-const BLUE = '#1565c0';
-const LIGHT_BLUE = '#e3f2fd';
+const BLUE = '#1976d2';
+const LIGHT_GREY = '#f5f7fa';
 
 const StudentApproval = () => {
   const [students, setStudents] = useState([]);
@@ -25,25 +68,34 @@ const StudentApproval = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('approvals');
-  
-  // ✅ Pagination state
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   const navigate = useNavigate();
   const [assignmentData, setAssignmentData] = useState({ course_id: '', batch_ids: [] });
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
-    { id: 'students', label: 'Manage users', icon: People, path: '/admin/manage-users' },
+    { id: 'students', label: 'Manage Users', icon: People, path: '/admin/manage-users' },
     { id: 'mentors', label: 'Mentors', icon: School, path: '/admin/create-mentor' },
     { id: 'courses', label: 'Courses', icon: Assignment, path: '/admin/manage-courses' },
     { id: 'batches', label: 'Batches', icon: School, path: '/admin/manage-batches' },
     { id: 'tasks', label: 'Tasks', icon: Task, path: '/admin/manage-tasks' },
-    { id: 'approvals', label: 'Approvals', icon: PersonAdd, path: '/admin/student-approval', badge: students.length },
+    {
+      id: 'approvals',
+      label: 'Approvals',
+      icon: PersonAdd,
+      path: '/admin/student-approval',
+      badge: students.filter((s) => !s.is_approved).length,
+    },
   ];
 
-  useEffect(() => { fetchPendingStudents(); fetchCourses(); }, []);
+  useEffect(() => {
+    fetchPendingStudents();
+    fetchCourses();
+  }, []);
+
   useEffect(() => {
     if (assignmentData.course_id) fetchBatchesByCourse(assignmentData.course_id);
     else setBatches([]);
@@ -65,20 +117,21 @@ const StudentApproval = () => {
     try {
       const response = await API.get('/courses/');
       setCourses(response.data);
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const fetchBatchesByCourse = async (courseId) => {
     try {
       const response = await API.get('/courses/batches/');
-      const courseBatches = response.data.filter((b) => b.course.id === parseInt(courseId) && b.is_active);
+      const courseBatches = response.data.filter(
+        (b) => b.course.id === parseInt(courseId) && b.is_active
+      );
       setBatches(courseBatches);
     } catch (error) {
       setBatches([]);
     }
   };
 
-  // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -88,11 +141,7 @@ const StudentApproval = () => {
     setPage(0);
   };
 
-  // ✅ Calculate paginated data
-  const paginatedStudents = students.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const paginatedStudents = students.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleOpenApprovalDialog = (student) => {
     setSelectedStudent(student);
@@ -115,15 +164,17 @@ const StudentApproval = () => {
     }
     try {
       const response = await API.post(`/auth/approve-student/${selectedStudent.id}/`, {
-        batch_ids: assignmentData.batch_ids
+        batch_ids: assignmentData.batch_ids,
       });
       setMessage({
         type: 'success',
-        text: response.data.message || `${selectedStudent.first_name} ${selectedStudent.last_name} approved successfully!`
+        text: response.data.message || `${selectedStudent.first_name} ${selectedStudent.last_name} approved successfully!`,
       });
       await fetchPendingStudents();
       handleCloseDialog();
-      setTimeout(() => { setMessage({ type: '', text: '' }); }, 5000);
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 5000);
     } catch (error) {
       setMessage({ type: 'error', text: error.response?.data?.error || 'Error approving student' });
     }
@@ -141,76 +192,81 @@ const StudentApproval = () => {
     }
   };
 
-  const getInitials = (firstName, lastName) => (
-    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
-  );
+  const getInitials = (firstName, lastName) =>
+    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 
-  // ✅ Simplified Sidebar - matching AdminDashboard
+  // ✅ EXACT SIDEBAR FROM MANAGETASKS
   const Sidebar = () => (
-    <Box sx={{
-      width: sidebarOpen ? 220 : 70,
-      height: 'calc(100vh - 64px)',
-      bgcolor: '#fff',
-      color: '#333',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'fixed',
-      left: 0,
-      top: 64,
-      zIndex: 1000,
-      borderRight: `2px solid ${LIGHT_BLUE}`,
-      boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-      transition: 'width 0.18s',
-      p: 0,
-    }}>
-      {/* Toggle Button */}
-      <Box sx={{
-        p: 2,
+    <Box
+      sx={{
+        width: sidebarOpen ? 220 : 70,
+        height: '100vh',
+        bgcolor: '#fff',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'width 0.25s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarOpen ? 'flex-end' : 'center',
-      }}>
+        flexDirection: 'column',
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: sidebarOpen ? 'space-between' : 'center',
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Admin
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
 
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+      <Divider />
 
-      {/* Navigation Items */}
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeNav === item.id;
           return (
             <ListItemButton
               key={item.id}
-              onClick={() => { setActiveNav(item.id); navigate(item.path); }}
+              onClick={() => {
+                setActiveNav(item.id);
+                navigate(item.path);
+              }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: isActive ? BLUE : 'transparent',
+                '&:hover': { backgroundColor: isActive ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE, minWidth: 40 }}>
+              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE }}>
                 {item.badge ? (
                   <Badge badgeContent={item.badge} color="error">
-                    <Icon />
+                    <Icon fontSize="small" />
                   </Badge>
                 ) : (
-                  <Icon />
+                  <Icon fontSize="small" />
                 )}
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? '#fff' : BLUE
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#fff' : '#333',
                   }}
                 />
               )}
@@ -223,9 +279,17 @@ const StudentApproval = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+      <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
         <Sidebar />
-        <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Box
+          sx={{
+            flex: 1,
+            ml: sidebarOpen ? '220px' : '70px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <CircularProgress sx={{ color: BLUE }} />
         </Box>
       </Box>
@@ -233,80 +297,111 @@ const StudentApproval = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
+
+      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin 0.25s ease' }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Paper elevation={0} sx={{
-            p: 3, mb: 4, borderRadius: 3, bgcolor: '#fff',
-            border: `1.5px solid ${BLUE}`,
-          }}>
+          {/* Header */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              bgcolor: '#fff',
+              border: '1px solid #e0e0e0',
+            }}
+          >
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#222', mb: 1 }}>
                   Student Approvals
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#223a5e' }}>
+                <Typography variant="body2" color="text.secondary">
                   Review and approve pending student registrations
                 </Typography>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="h2" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
-                  {students.length}
+              <Box sx={{ textAlign: 'center', p: 2, borderRadius: 2, bgcolor: LIGHT_GREY }}>
+                <Typography variant="h3" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
+                  {students.filter((s) => !s.is_approved).length}
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#223a5e' }}>
+                <Typography variant="body2" color="text.secondary">
                   Pending Approvals
                 </Typography>
               </Box>
             </Box>
           </Paper>
 
+          {/* Message Alert */}
           {message.text && (
             <Alert
               severity={message.type}
-              sx={{
-                mb: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(21,101,192,0.08)',
-                color: message.type === 'error' ? "#d32f2f" : BLUE,
-              }}
+              sx={{ mb: 3, borderRadius: 2 }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
               {message.text}
             </Alert>
           )}
 
+          {/* Content */}
           {students.length === 0 ? (
-            <Paper elevation={0} sx={{
-              p: 8, textAlign: 'center', borderRadius: 3,
-              border: `1.5px solid ${LIGHT_BLUE}`
-            }}>
-              <CheckCircle sx={{ fontSize: 64, color: BLUE, mb: 2 }} />
-              <Typography variant="h6" color={BLUE} gutterBottom>All Clear!</Typography>
-              <Typography variant="body2" color="#223a5e">
+            <Paper
+              elevation={0}
+              sx={{
+                p: 8,
+                textAlign: 'center',
+                borderRadius: 3,
+                border: '1px solid #e0e0e0',
+              }}
+            >
+              <CheckCircle sx={{ fontSize: 64, color: '#4caf50', mb: 2 }} />
+              <Typography variant="h6" color="#222">
+                All Clear!
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
                 No pending student approvals at the moment
               </Typography>
             </Paper>
           ) : (
-            <Paper elevation={0} sx={{
-              borderRadius: 3, overflow: 'hidden',
-              border: `1.5px solid ${LIGHT_BLUE}`,
-            }}>
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid #e0e0e0',
+                bgcolor: '#fff',
+              }}
+            >
               <TableContainer>
                 <Table>
                   <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Student</TableCell>
-                      <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Contact Information</TableCell>
-                      <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Registered Date</TableCell>
-                      <TableCell sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Status</TableCell>
-                      <TableCell align="center" sx={{ bgcolor: LIGHT_BLUE, fontWeight: 700, color: BLUE }}>Actions</TableCell>
+                    <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                      <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                        Student
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                        Contact Information
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                        Registered Date
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                        Status
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                        Actions
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {paginatedStudents.map((student) => (
                       <TableRow
                         key={student.id}
+                        hover
                         sx={{
-                          '&:hover': { bgcolor: LIGHT_BLUE }, transition: 'background-color 0.2s'
+                          '&:hover': { bgcolor: LIGHT_GREY },
+                          transition: 'background-color 0.2s',
                         }}
                       >
                         <TableCell>
@@ -316,8 +411,8 @@ const StudentApproval = () => {
                                 width: 40,
                                 height: 40,
                                 bgcolor: BLUE,
-                                color: "#fff",
-                                fontWeight: 700
+                                color: '#fff',
+                                fontWeight: 700,
                               }}
                             >
                               {getInitials(student.first_name, student.last_name)}
@@ -326,7 +421,7 @@ const StudentApproval = () => {
                               <Typography variant="body2" fontWeight={600}>
                                 {student.first_name} {student.last_name}
                               </Typography>
-                              <Typography variant="caption" color="#223a5e">
+                              <Typography variant="caption" color="text.secondary">
                                 @{student.username}
                               </Typography>
                             </Box>
@@ -340,7 +435,9 @@ const StudentApproval = () => {
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Phone sx={{ fontSize: 16, color: BLUE }} />
-                              <Typography variant="body2" color="#223a5e">{student.phone || 'N/A'}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {student.phone || 'N/A'}
+                              </Typography>
                             </Box>
                           </Box>
                         </TableCell>
@@ -357,14 +454,14 @@ const StudentApproval = () => {
                             label="Pending"
                             size="small"
                             sx={{
-                              bgcolor: LIGHT_BLUE,
+                              bgcolor: LIGHT_GREY,
                               color: BLUE,
-                              fontWeight: 700,
+                              fontWeight: 600,
                             }}
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
                             <Tooltip title="Approve Student">
                               <Button
                                 variant="contained"
@@ -374,13 +471,9 @@ const StudentApproval = () => {
                                 sx={{
                                   bgcolor: BLUE,
                                   borderRadius: 2,
-                                  fontWeight: 700,
-                                  color: "#fff",
-                                  '&:hover': {
-                                    bgcolor: '#003c8f',
-                                    color: '#fff',
-                                  },
-                                  transition: 'all 0.2s'
+                                  fontWeight: 600,
+                                  color: '#fff',
+                                  '&:hover': { bgcolor: '#1565c0' },
                                 }}
                               >
                                 Approve
@@ -391,7 +484,7 @@ const StudentApproval = () => {
                                 size="small"
                                 onClick={() => handleReject(student.id, student.username)}
                                 sx={{
-                                  border: `1px solid #d32f2f`,
+                                  border: '1px solid #d32f2f',
                                   color: '#d32f2f',
                                   borderRadius: 1.5,
                                   '&:hover': { bgcolor: '#d32f2f', color: '#fff' },
@@ -408,29 +501,31 @@ const StudentApproval = () => {
                 </Table>
               </TableContainer>
 
-              {/* ✅ Pagination Component */}
-              <TablePagination
-                component="div"
-                count={students.length}
-                page={page}
-                onPageChange={handleChangePage}
-                rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                sx={{
-                  borderTop: `1px solid ${LIGHT_BLUE}`,
-                  '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                    color: BLUE,
-                    fontWeight: 500
-                  }
-                }}
-              />
+              {/* Pagination */}
+              {students.length > 0 && (
+                <TablePagination
+                  component="div"
+                  count={students.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  sx={{
+                    borderTop: '1px solid #e0e0e0',
+                    '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
+                      color: '#555',
+                      fontWeight: 500,
+                    },
+                  }}
+                />
+              )}
             </Paper>
           )}
         </Container>
       </Box>
 
-      {/* Dialog - Approve & Assign */}
+      {/* Approval Dialog */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
@@ -447,16 +542,16 @@ const StudentApproval = () => {
         <DialogContent sx={{ pt: 3 }}>
           {selectedStudent && (
             <Box>
-              <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: LIGHT_BLUE, borderRadius: 2 }}>
+              <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: LIGHT_GREY, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar
                     sx={{
                       width: 56,
                       height: 56,
                       bgcolor: BLUE,
-                      color: "#fff",
+                      color: '#fff',
                       fontSize: '1.25rem',
-                      fontWeight: 700
+                      fontWeight: 700,
                     }}
                   >
                     {getInitials(selectedStudent.first_name, selectedStudent.last_name)}
@@ -465,14 +560,14 @@ const StudentApproval = () => {
                     <Typography variant="h6" fontWeight={700}>
                       {selectedStudent.first_name} {selectedStudent.last_name}
                     </Typography>
-                    <Typography variant="body2" color="#223a5e">
+                    <Typography variant="body2" color="text.secondary">
                       {selectedStudent.email}
                     </Typography>
                   </Box>
                 </Box>
               </Paper>
 
-              <Typography variant="body2" color="#223a5e" gutterBottom sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 2 }}>
                 Assign student to course and batch(es) to complete the approval
               </Typography>
               <Grid container spacing={2}>
@@ -483,25 +578,22 @@ const StudentApproval = () => {
                       value={assignmentData.course_id}
                       onChange={(e) => {
                         setAssignmentData({
-                          course_id: e.target.value, batch_ids: []
+                          course_id: e.target.value,
+                          batch_ids: [],
                         });
                       }}
                       label="Select Course"
                       sx={{ borderRadius: 2 }}
                     >
-                      {courses.length === 0
-                        ? <MenuItem disabled>No courses available</MenuItem>
-                        : courses.map(course => (
+                      {courses.length === 0 ? (
+                        <MenuItem disabled>No courses available</MenuItem>
+                      ) : (
+                        courses.map((course) => (
                           <MenuItem key={course.id} value={course.id}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Assignment sx={{ fontSize: 20, color: BLUE }} />
-                              <Box>
-                                <Typography variant="body2" fontWeight={600}>{course.name}</Typography>
-                                <Typography variant="caption" color="#223a5e">{course.code}</Typography>
-                              </Box>
-                            </Box>
+                            {course.name} ({course.code})
                           </MenuItem>
-                        ))}
+                        ))
+                      )}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -511,46 +603,60 @@ const StudentApproval = () => {
                     <Select
                       multiple
                       value={assignmentData.batch_ids}
-                      onChange={(e) => setAssignmentData({ ...assignmentData, batch_ids: e.target.value })}
+                      onChange={(e) =>
+                        setAssignmentData({ ...assignmentData, batch_ids: e.target.value })
+                      }
                       label="Select Batch(es)"
                       sx={{ borderRadius: 2 }}
                       renderValue={(selected) => (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {selected.length === 0
-                            ? <Typography variant="body2" color="#223a5e">Select batches...</Typography>
-                            : selected.map(value => {
-                              const batch = batches.find(b => b.id === value);
+                          {selected.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary">
+                              Select batches...
+                            </Typography>
+                          ) : (
+                            selected.map((value) => {
+                              const batch = batches.find((b) => b.id === value);
                               return (
                                 <Chip
                                   key={value}
                                   label={batch?.name}
                                   size="small"
                                   sx={{
-                                    bgcolor: LIGHT_BLUE, color: BLUE, fontWeight: 700
+                                    bgcolor: LIGHT_GREY,
+                                    color: BLUE,
+                                    fontWeight: 600,
                                   }}
                                 />
                               );
-                            })}
+                            })
+                          )}
                         </Box>
                       )}
                     >
-                      {batches.length === 0
-                        ? <MenuItem disabled>
-                          {assignmentData.course_id ? 'No active batches available for this course' : 'Please select a course first'}
+                      {batches.length === 0 ? (
+                        <MenuItem disabled>
+                          {assignmentData.course_id
+                            ? 'No active batches available for this course'
+                            : 'Please select a course first'}
                         </MenuItem>
-                        : batches.map(batch => (
+                      ) : (
+                        batches.map((batch) => (
                           <MenuItem key={batch.id} value={batch.id}>
-                            <Checkbox checked={assignmentData.batch_ids.indexOf(batch.id) > -1} sx={{ color: BLUE }} />
+                            <Checkbox
+                              checked={assignmentData.batch_ids.indexOf(batch.id) > -1}
+                              sx={{ color: BLUE }}
+                            />
                             <ListItemText
                               primary={batch.name}
                               secondary={`Students: ${batch.student_count || 0}/${batch.max_students}`}
                             />
                           </MenuItem>
                         ))
-                      }
+                      )}
                     </Select>
                   </FormControl>
-                  <Typography variant="caption" color="#223a5e" sx={{ mt: 1, display: 'block' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
                     💡 You can assign the student to multiple batches
                   </Typography>
                 </Grid>
@@ -571,9 +677,9 @@ const StudentApproval = () => {
               bgcolor: BLUE,
               borderRadius: 2,
               px: 3,
-              fontWeight: 700,
-              color: "#fff",
-              '&:hover': { bgcolor: '#003c8f' }
+              fontWeight: 600,
+              color: '#fff',
+              '&:hover': { bgcolor: '#1565c0' },
             }}
           >
             Approve & Assign

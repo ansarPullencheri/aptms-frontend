@@ -2,139 +2,160 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Box, Container, Typography, Button, Chip, Paper, IconButton, List, ListItemButton, ListItemIcon,
-  ListItemText, Divider, Avatar, CircularProgress, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, TablePagination
+  Box,
+  Container,
+  Typography,
+  Button,
+  Chip,
+  Paper,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon, Group, Assignment, GradeOutlined, Menu as MenuIcon, Close,
-  School, AddTask, CalendarToday, People, RateReview,
+  Dashboard as DashboardIcon,
+  Group,
+  Assignment,
+  GradeOutlined,
+  Menu as MenuIcon,
+  Close,
+  AddTask,
+  CalendarToday,
+  People,
+  RateReview,
+  Assessment,
 } from '@mui/icons-material';
 
-
-const BLUE = "#1565c0";
-const LIGHT_BLUE = "#e3f2fd";
-
+const BLUE = '#1976d2';
+const LIGHT_GREY = '#f5f7fa';
 
 const MentorTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('tasks');
-  
-  // ✅ Pagination state
+
+  // Pagination state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   const navigate = useNavigate();
 
-
-  // ✅ Added Weekly Review to navigation
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/mentor/dashboard' },
     { id: 'batches', label: 'My Batches', icon: Group, path: '/mentor/batches' },
     { id: 'create-task', label: 'Create Task', icon: AddTask, path: '/mentor/create-task' },
     { id: 'tasks', label: 'Tasks', icon: Assignment, path: '/mentor/tasks' },
-    { id: 'weekly-review', label: 'Weekly Review', icon: RateReview, path: '/mentor/weekly-review' },
+    { id: 'weekly-review', label: 'Weekly Review', icon: Assessment, path: '/mentor/weekly-review' },
+    { id: 'reviews', label: 'My Reviews', icon: RateReview, path: '/mentor/reviews' },
   ];
 
-
-  useEffect(() => { fetchTasks(); }, []);
-
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const fetchTasks = async () => {
     try {
       const response = await API.get('/tasks/mentor/tasks/');
       setTasks(response.data.tasks || []);
-    } catch (error) { } finally { setLoading(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-
-  // ✅ Pagination handlers
+  // Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
-
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-
-  // ✅ Calculate paginated data
-  const paginatedTasks = tasks.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
-
+  // Calculate paginated data
+  const paginatedTasks = tasks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const isOverdue = (dueDate) => new Date(dueDate) < new Date();
 
-
-  // ✅ Sidebar with Weekly Review
   const Sidebar = () => (
     <Box
       sx={{
         width: sidebarOpen ? 220 : 70,
-        height: 'calc(100vh - 64px)',
-        bgcolor: "#fff",
-        color: '#333',
+        height: '100vh',
+        bgcolor: '#fff',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'width 0.25s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         display: 'flex',
         flexDirection: 'column',
-        position: 'fixed',
-        left: 0,
-        top: 64,
-        zIndex: 1000,
-        borderRight: `2px solid ${LIGHT_BLUE}`,
-        boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-        transition: 'width 0.18s',
-        p: 0,
-      }}>
-      {/* Toggle Button */}
-      <Box sx={{
-        p: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarOpen ? 'flex-end' : 'center',
-      }}>
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: sidebarOpen ? 'space-between' : 'center',
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Mentor
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
 
+      <Divider />
 
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
-
-
-      {/* Navigation Items */}
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeNav === item.id;
+          const active = activeNav === item.id;
           return (
             <ListItemButton
               key={item.id}
-              onClick={() => { setActiveNav(item.id); navigate(item.path); }}
+              onClick={() => {
+                setActiveNav(item.id);
+                navigate(item.path);
+              }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: active ? BLUE : 'transparent',
+                '&:hover': { backgroundColor: active ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? "#fff" : BLUE, minWidth: 40 }}>
-                <Icon />
+              <ListItemIcon sx={{ color: active ? '#fff' : BLUE }}>
+                <Icon fontSize="small" />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? '#fff' : BLUE
+                    fontWeight: active ? 600 : 400,
+                    color: active ? '#fff' : '#333',
                   }}
                 />
               )}
@@ -145,50 +166,58 @@ const MentorTasks = () => {
     </Box>
   );
 
-
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+      <Box sx={{ display: 'flex' }}>
         <Sidebar />
-        <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Box
+          sx={{
+            flex: 1,
+            ml: sidebarOpen ? '220px' : '70px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            bgcolor: LIGHT_GREY,
+          }}
+        >
           <CircularProgress sx={{ color: BLUE }} />
         </Box>
       </Box>
     );
   }
 
-
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
-        <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin 0.25s ease' }}>
+        <Container maxWidth="xl" sx={{ py: 5 }}>
+          {/* Header Section */}
           <Paper
             elevation={0}
             sx={{
               p: 3,
               mb: 4,
               borderRadius: 3,
-              bgcolor: "#fff",
-              border: `1.5px solid ${BLUE}`,
-              color: BLUE
+              bgcolor: '#fff',
+              border: '1px solid #e0e0e0',
             }}
           >
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#222', mb: 1 }}>
                   All Batch Tasks
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#223a5e" }}>
+                <Typography variant="body2" sx={{ color: '#666' }}>
                   View all tasks assigned to students in your batches
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                 <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h2" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: BLUE, mb: 0.5 }}>
                     {tasks.length}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#223a5e" }}>
+                  <Typography variant="body2" sx={{ color: '#666' }}>
                     Total Tasks
                   </Typography>
                 </Box>
@@ -198,14 +227,13 @@ const MentorTasks = () => {
                   onClick={() => navigate('/mentor/create-task')}
                   sx={{
                     bgcolor: BLUE,
-                    color: "#fff",
+                    color: '#fff',
                     borderRadius: 2,
                     fontWeight: 700,
                     px: 3,
                     py: 1.5,
-                    boxShadow: 'none',
                     '&:hover': {
-                      bgcolor: "#003c8f",
+                      bgcolor: '#1565c0',
                       transform: 'scale(1.04)',
                     },
                     transition: 'all 0.2s',
@@ -217,36 +245,39 @@ const MentorTasks = () => {
             </Box>
           </Paper>
 
-
-          <Paper elevation={0} sx={{
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: `1.5px solid ${LIGHT_BLUE}`,
-            bgcolor: "#fff",
-          }}>
+          {/* Tasks Table */}
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+              border: '1px solid #e0e0e0',
+              bgcolor: '#fff',
+            }}
+          >
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                  <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Task Title
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Batch / Course
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Assigned
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Submitted
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Pending
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Due Date
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#555' }}>
                       Actions
                     </TableCell>
                   </TableRow>
@@ -254,12 +285,12 @@ const MentorTasks = () => {
                 <TableBody>
                   {tasks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                        <Assignment sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                        <Typography variant="h6" color={BLUE} gutterBottom>
+                      <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                        <Assignment sx={{ fontSize: 80, color: '#ccc', mb: 2 }} />
+                        <Typography variant="h6" color="#555" sx={{ fontWeight: 600, mb: 1 }}>
                           No Tasks Found
                         </Typography>
-                        <Typography variant="body2" color="#223a5e" sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                           No tasks have been assigned to your batch students yet
                         </Typography>
                         <Button
@@ -268,11 +299,11 @@ const MentorTasks = () => {
                           onClick={() => navigate('/mentor/create-task')}
                           sx={{
                             bgcolor: BLUE,
-                            color: "#fff",
+                            color: '#fff',
                             borderRadius: 2,
                             px: 3,
                             fontWeight: 700,
-                            '&:hover': { bgcolor: "#003c8f" }
+                            '&:hover': { bgcolor: '#1565c0' },
                           }}
                         >
                           Create Task
@@ -285,9 +316,10 @@ const MentorTasks = () => {
                         key={task.id}
                         hover
                         sx={{
-                          '&:hover': { bgcolor: LIGHT_BLUE },
+                          '&:hover': { bgcolor: LIGHT_GREY },
                           transition: 'background-color 0.2s',
-                        }}>
+                        }}
+                      >
                         <TableCell>
                           <Typography variant="body2" fontWeight={600}>
                             {task.title}
@@ -295,7 +327,7 @@ const MentorTasks = () => {
                           {task.description && (
                             <Typography
                               variant="caption"
-                              color="#223a5e"
+                              color="#666"
                               sx={{
                                 display: '-webkit-box',
                                 WebkitLineClamp: 1,
@@ -310,11 +342,19 @@ const MentorTasks = () => {
                         </TableCell>
                         <TableCell>
                           <Box>
-                            <Typography variant="body2" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}
+                            >
                               <People sx={{ fontSize: 16, color: BLUE }} />
                               {task.batch_name}
                             </Typography>
-                            <Typography variant="caption" color="#223a5e" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography
+                              variant="caption"
+                              color="#666"
+                              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                            >
                               <Assignment sx={{ fontSize: 14, color: BLUE }} />
                               {task.course_name}
                             </Typography>
@@ -325,7 +365,7 @@ const MentorTasks = () => {
                             label={task.total_students}
                             size="small"
                             sx={{
-                              bgcolor: LIGHT_BLUE,
+                              bgcolor: LIGHT_GREY,
                               color: BLUE,
                               fontWeight: 700,
                             }}
@@ -336,8 +376,8 @@ const MentorTasks = () => {
                             label={task.submission_count}
                             size="small"
                             sx={{
-                              bgcolor: "#0097A7",
-                              color: "#fff",
+                              bgcolor: '#0097A7',
+                              color: '#fff',
                               fontWeight: 700,
                             }}
                           />
@@ -347,8 +387,8 @@ const MentorTasks = () => {
                             label={task.pending_grading}
                             size="small"
                             sx={{
-                              bgcolor: "#fbbc04",
-                              color: "#222",
+                              bgcolor: '#fbbc04',
+                              color: '#222',
                               fontWeight: 700,
                             }}
                           />
@@ -368,7 +408,7 @@ const MentorTasks = () => {
                                 sx={{
                                   height: 18,
                                   fontSize: '0.7rem',
-                                  bgcolor: LIGHT_BLUE,
+                                  bgcolor: LIGHT_GREY,
                                   color: BLUE,
                                   fontWeight: 700,
                                 }}
@@ -380,8 +420,8 @@ const MentorTasks = () => {
                                   sx={{
                                     height: 18,
                                     fontSize: '0.7rem',
-                                    bgcolor: "#d32f2f",
-                                    color: "#fff",
+                                    bgcolor: '#d32f2f',
+                                    color: '#fff',
                                     fontWeight: 700,
                                   }}
                                 />
@@ -404,12 +444,12 @@ const MentorTasks = () => {
                             disabled={task.submission_count === 0}
                             sx={{
                               bgcolor: BLUE,
-                              color: "#fff",
+                              color: '#fff',
                               borderRadius: 2,
                               fontWeight: 700,
                               px: 2,
                               '&:hover': {
-                                bgcolor: "#003c8f",
+                                bgcolor: '#1565c0',
                                 transform: 'scale(1.05)',
                               },
                               '&:disabled': {
@@ -429,8 +469,7 @@ const MentorTasks = () => {
               </Table>
             </TableContainer>
 
-
-            {/* ✅ Pagination Component */}
+            {/* Pagination */}
             {tasks.length > 0 && (
               <TablePagination
                 component="div"
@@ -441,11 +480,11 @@ const MentorTasks = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 sx={{
-                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  borderTop: '1px solid #e0e0e0',
                   '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                    color: BLUE,
-                    fontWeight: 500
-                  }
+                    color: '#555',
+                    fontWeight: 500,
+                  },
                 }}
               />
             )}
@@ -455,6 +494,5 @@ const MentorTasks = () => {
     </Box>
   );
 };
-
 
 export default MentorTasks;

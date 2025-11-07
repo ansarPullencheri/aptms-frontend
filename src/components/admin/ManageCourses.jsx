@@ -2,19 +2,61 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Container, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Grid, Box, Select, MenuItem, FormControl, InputLabel, Alert,
-  IconButton, Avatar, List, ListItemButton, ListItemIcon, ListItemText,
-  Divider, Badge, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Chip, Tooltip, TablePagination
+  Container,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Grid,
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Alert,
+  IconButton,
+  Avatar,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Badge,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Tooltip,
+  TablePagination,
+  CircularProgress,
 } from '@mui/material';
 import {
-  Add, Edit, Delete, PersonAdd, School, Timer, Dashboard as DashboardIcon,
-  People, Assignment, Task, Menu as MenuIcon, Close, UploadFile, Download, CheckCircle
+  Add,
+  Edit,
+  Delete,
+  PersonAdd,
+  School,
+  Timer,
+  Dashboard as DashboardIcon,
+  People,
+  Assignment,
+  Task,
+  Menu as MenuIcon,
+  Close,
+  UploadFile,
+  Download,
+  CheckCircle,
 } from '@mui/icons-material';
 
-const BLUE = '#1565c0';
-const LIGHT_BLUE = '#e3f2fd';
+const BLUE = '#1976d2';
+const LIGHT_GREY = '#f5f7fa';
 
 const ManageCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -25,13 +67,14 @@ const ManageCourses = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('courses');
-  const [syllabusFile, setSyllabusFile] = useState(null);  // ✅ New state
-  
+  const [syllabusFile, setSyllabusFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -42,7 +85,7 @@ const ManageCourses = () => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
-    { id: 'students', label: 'Manage users', icon: People, path: '/admin/manage-users' },
+    { id: 'students', label: 'Manage Users', icon: People, path: '/admin/manage-users' },
     { id: 'mentors', label: 'Mentors', icon: School, path: '/admin/create-mentor' },
     { id: 'courses', label: 'Courses', icon: Assignment, path: '/admin/manage-courses' },
     { id: 'batches', label: 'Batches', icon: School, path: '/admin/manage-batches' },
@@ -57,16 +100,23 @@ const ManageCourses = () => {
 
   const fetchCourses = async () => {
     try {
+      setLoading(true);
       const response = await API.get('/courses/');
       setCourses(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch courses' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchMentors = async () => {
     try {
       const response = await API.get('/auth/mentors/');
       setMentors(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch mentors' });
+    }
   };
 
   const handleChangePage = (event, newPage) => {
@@ -78,10 +128,7 @@ const ManageCourses = () => {
     setPage(0);
   };
 
-  const paginatedCourses = courses.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const paginatedCourses = courses.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleOpenDialog = (course = null) => {
     if (course) {
@@ -101,17 +148,16 @@ const ManageCourses = () => {
       });
       setSelectedCourse(null);
     }
-    setSyllabusFile(null);  // ✅ Reset file
+    setSyllabusFile(null);
     setOpenDialog(true);
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedCourse(null);
-    setSyllabusFile(null);  // ✅ Reset file
+    setSyllabusFile(null);
   };
 
-  // ✅ Handle file selection
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -119,7 +165,7 @@ const ManageCourses = () => {
         setMessage({ type: 'error', text: 'Only PDF files are allowed' });
         return;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         setMessage({ type: 'error', text: 'File size must be less than 10MB' });
         return;
       }
@@ -127,7 +173,6 @@ const ManageCourses = () => {
     }
   };
 
-  // ✅ Updated submit handler with file upload
   const handleSubmit = async () => {
     try {
       const formDataToSend = new FormData();
@@ -135,19 +180,19 @@ const ManageCourses = () => {
       formDataToSend.append('code', formData.code.trim());
       formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('duration_weeks', parseInt(formData.duration_weeks) || 1);
-      
+
       if (syllabusFile) {
         formDataToSend.append('syllabus', syllabusFile);
       }
 
       if (selectedCourse) {
         await API.put(`/courses/${selectedCourse.id}/update/`, formDataToSend, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         setMessage({ type: 'success', text: 'Course updated successfully!' });
       } else {
         await API.post('/courses/create/', formDataToSend, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
         setMessage({ type: 'success', text: 'Course created successfully!' });
       }
@@ -156,9 +201,7 @@ const ManageCourses = () => {
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       const errorMsg =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        'Error saving course';
+        error.response?.data?.error || error.response?.data?.message || 'Error saving course';
       setMessage({ type: 'error', text: errorMsg });
     }
   };
@@ -196,13 +239,12 @@ const ManageCourses = () => {
     }
   };
 
-  // ✅ Download syllabus handler
   const handleDownloadSyllabus = async (courseId, courseName) => {
     try {
       const response = await API.get(`/courses/${courseId}/download-syllabus/`, {
-        responseType: 'blob'
+        responseType: 'blob',
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -216,41 +258,47 @@ const ManageCourses = () => {
     }
   };
 
-  const getInitials = (firstName, lastName) => (
-    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
-  );
+  const getInitials = (firstName, lastName) =>
+    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 
   const Sidebar = () => (
-    <Box sx={{
-      width: sidebarOpen ? 220 : 70,
-      height: 'calc(100vh - 64px)',
-      bgcolor: '#fff',
-      color: '#333',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'fixed',
-      left: 0,
-      top: 64,
-      zIndex: 1000,
-      borderRight: `2px solid ${LIGHT_BLUE}`,
-      boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-      transition: 'width 0.18s',
-      p: 0
-    }}>
-      <Box sx={{
-        p: 2,
+    <Box
+      sx={{
+        width: sidebarOpen ? 220 : 70,
+        height: '100vh',
+        bgcolor: '#fff',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'width 0.25s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarOpen ? 'flex-end' : 'center',
-      }}>
+        flexDirection: 'column',
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: sidebarOpen ? 'space-between' : 'center',
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Admin
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
 
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+      <Divider />
 
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeNav === item.id;
@@ -262,24 +310,22 @@ const ManageCourses = () => {
                 navigate(item.path);
               }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: isActive ? BLUE : 'transparent',
+                '&:hover': { backgroundColor: isActive ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE, minWidth: 40 }}>
-                <Icon />
+              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE }}>
+                <Icon fontSize="small" />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
-                    fontWeight: isActive ? 700 : 400,
-                    color: isActive ? '#fff' : BLUE
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#fff' : '#333',
                   }}
                 />
               )}
@@ -291,21 +337,28 @@ const ManageCourses = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
+      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin 0.25s ease' }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Paper elevation={0} sx={{
-            p: 3, mb: 4, borderRadius: 3, bgcolor: '#fff',
-            border: `1.5px solid ${BLUE}`
-          }}>
+          {/* Header */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              bgcolor: '#fff',
+              border: '1px solid #e0e0e0',
+            }}
+          >
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#222', mb: 1 }}>
                   Manage Courses
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#223a5e' }}>
-                  Create, edit, and manage courses with mentor assignments and syllabus
+                <Typography variant="body2" color="text.secondary">
+                  Create, edit, and manage courses with mentors and syllabi
                 </Typography>
               </Box>
               <Button
@@ -313,24 +366,27 @@ const ManageCourses = () => {
                 startIcon={<Add />}
                 onClick={() => handleOpenDialog()}
                 sx={{
-                  bgcolor: BLUE, color: '#fff', px: 3, py: 1.2, borderRadius: 2,
-                  fontWeight: 600, boxShadow: 'none',
-                  '&:hover': { bgcolor: '#003c8f' },
-                  transition: 'all 0.3s',
+                  bgcolor: BLUE,
+                  color: '#fff',
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: '#1565c0' },
                 }}
               >
-                Add New Course
+                Add Course
               </Button>
             </Box>
           </Paper>
 
+          {/* Message Alert */}
           {message.text && (
             <Alert
               severity={message.type}
               sx={{
                 mb: 3,
                 borderRadius: 2,
-                boxShadow: '0 2px 8px rgba(21,101,192,0.08)',
               }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
@@ -338,45 +394,55 @@ const ManageCourses = () => {
             </Alert>
           )}
 
-          <Paper elevation={0} sx={{
-            borderRadius: 3,
-            overflow: 'hidden',
-            border: `1.5px solid ${LIGHT_BLUE}`,
-            bgcolor: '#fff',
-          }}>
+          {/* Table Section */}
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+              border: '1px solid #e0e0e0',
+              bgcolor: '#fff',
+            }}
+          >
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                  <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Course Name
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Description
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Duration
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Mentor
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Syllabus
                     </TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, fontSize: '0.875rem', color: BLUE }}>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
                       Actions
                     </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {courses.length === 0 ? (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                        <CircularProgress sx={{ color: BLUE }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : courses.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                        <Assignment sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                        <Typography variant="h6" color={BLUE}>
+                        <Assignment sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                        <Typography variant="h6" color="#555">
                           No Courses Yet
                         </Typography>
-                        <Typography variant="body2" color="#223a5e" sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                           Create your first course to get started
                         </Typography>
                         <Button
@@ -385,11 +451,11 @@ const ManageCourses = () => {
                           onClick={() => handleOpenDialog()}
                           sx={{
                             bgcolor: BLUE,
-                            color: "#fff",
+                            color: '#fff',
                             borderRadius: 2,
                             px: 3,
                             fontWeight: 700,
-                            '&:hover': { bgcolor: '#003c8f' }
+                            '&:hover': { bgcolor: '#1565c0' },
                           }}
                         >
                           Create Course
@@ -400,8 +466,9 @@ const ManageCourses = () => {
                     paginatedCourses.map((course) => (
                       <TableRow
                         key={course.id}
+                        hover
                         sx={{
-                          '&:hover': { bgcolor: LIGHT_BLUE },
+                          '&:hover': { bgcolor: LIGHT_GREY },
                           transition: 'background-color 0.2s',
                         }}
                       >
@@ -410,7 +477,7 @@ const ManageCourses = () => {
                             {course.name}
                           </Typography>
                           {course.code && (
-                            <Typography variant="caption" color="#223a5e">
+                            <Typography variant="caption" color="text.secondary">
                               {course.code}
                             </Typography>
                           )}
@@ -418,14 +485,14 @@ const ManageCourses = () => {
                         <TableCell>
                           <Typography
                             variant="body2"
-                            color="#223a5e"
+                            color="text.secondary"
                             sx={{
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              maxWidth: 300,
+                              maxWidth: 250,
                             }}
                           >
                             {course.description || 'No description'}
@@ -434,9 +501,7 @@ const ManageCourses = () => {
                         <TableCell>
                           <Box display="flex" alignItems="center" gap={0.5}>
                             <Timer sx={{ fontSize: 16, color: BLUE }} />
-                            <Typography variant="body2">
-                              {course.duration_weeks} weeks
-                            </Typography>
+                            <Typography variant="body2">{course.duration_weeks} weeks</Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -449,6 +514,7 @@ const ManageCourses = () => {
                                   bgcolor: BLUE,
                                   fontSize: '0.875rem',
                                   fontWeight: 600,
+                                  color: '#fff',
                                 }}
                               >
                                 {getInitials(course.mentor.first_name, course.mentor.last_name)}
@@ -464,9 +530,9 @@ const ManageCourses = () => {
                               label="No Mentor"
                               size="small"
                               sx={{
-                                background: LIGHT_BLUE,
-                                color: BLUE,
-                                fontWeight: 700,
+                                bgcolor: LIGHT_GREY,
+                                color: '#999',
+                                fontWeight: 600,
                               }}
                             />
                           )}
@@ -480,7 +546,7 @@ const ManageCourses = () => {
                                 sx={{
                                   color: '#00897b',
                                   bgcolor: '#b2dfdb',
-                                  '&:hover': { bgcolor: '#00897b', color: '#fff' }
+                                  '&:hover': { bgcolor: '#00897b', color: '#fff' },
                                 }}
                               >
                                 <Download fontSize="small" />
@@ -494,7 +560,7 @@ const ManageCourses = () => {
                                 bgcolor: '#fff0f0',
                                 color: '#d32f2f',
                                 fontWeight: 600,
-                                fontSize: '0.75rem'
+                                fontSize: '0.75rem',
                               }}
                             />
                           )}
@@ -571,11 +637,11 @@ const ManageCourses = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 sx={{
-                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  borderTop: '1px solid #e0e0e0',
                   '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                    color: BLUE,
-                    fontWeight: 500
-                  }
+                    color: '#555',
+                    fontWeight: 500,
+                  },
                 }}
               />
             )}
@@ -591,11 +657,7 @@ const ManageCourses = () => {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{
-          bgcolor: BLUE,
-          color: '#fff',
-          fontWeight: 700,
-        }}>
+        <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
           {selectedCourse ? 'Edit Course' : 'Create New Course'}
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
@@ -642,25 +704,28 @@ const ManageCourses = () => {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    duration_weeks: parseInt(e.target.value) || 1
-                  })}
+                    duration_weeks: parseInt(e.target.value) || 1,
+                  })
+                }
                 inputProps={{ min: 1 }}
                 required
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
             </Grid>
-            
-            {/* ✅ Syllabus Upload Section */}
+
+            {/* Syllabus Upload */}
             <Grid item xs={12}>
-              <Box sx={{ 
-                border: `2px dashed ${LIGHT_BLUE}`, 
-                borderRadius: 2, 
-                p: 3, 
-                textAlign: 'center',
-                bgcolor: '#fafafa'
-              }}>
+              <Box
+                sx={{
+                  border: `2px dashed #e0e0e0`,
+                  borderRadius: 2,
+                  p: 3,
+                  textAlign: 'center',
+                  bgcolor: '#f5f5f5',
+                }}
+              >
                 <UploadFile sx={{ fontSize: 48, color: BLUE, mb: 1 }} />
-                <Typography variant="body2" color="#223a5e" gutterBottom>
+                <Typography variant="body2" color="#555" gutterBottom>
                   Upload Syllabus (PDF only, max 10MB)
                 </Typography>
                 <input
@@ -680,7 +745,7 @@ const ManageCourses = () => {
                       borderColor: BLUE,
                       color: BLUE,
                       borderRadius: 2,
-                      '&:hover': { bgcolor: LIGHT_BLUE }
+                      '&:hover': { bgcolor: LIGHT_GREY },
                     }}
                   >
                     Choose File
@@ -715,7 +780,7 @@ const ManageCourses = () => {
               borderRadius: 2,
               px: 3,
               color: '#fff',
-              '&:hover': { bgcolor: '#003c8f' },
+              '&:hover': { bgcolor: '#1565c0' },
             }}
           >
             {selectedCourse ? 'Update' : 'Create'}
@@ -727,16 +792,14 @@ const ManageCourses = () => {
       <Dialog
         open={openAssignDialog}
         onClose={() => setOpenAssignDialog(false)}
+        maxWidth="sm"
+        fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{
-          bgcolor: BLUE,
-          color: '#fff',
-          fontWeight: 700,
-        }}>
+        <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
           Assign Mentor to Course
         </DialogTitle>
-        <DialogContent sx={{ minWidth: 400, mt: 2 }}>
+        <DialogContent sx={{ pt: 3 }}>
           <FormControl fullWidth>
             <InputLabel>Select Mentor</InputLabel>
             <Select
@@ -754,7 +817,7 @@ const ManageCourses = () => {
                         height: 32,
                         bgcolor: BLUE,
                         fontSize: '0.875rem',
-                        color: '#fff'
+                        color: '#fff',
                       }}
                     >
                       {getInitials(mentor.first_name, mentor.last_name)}
@@ -763,7 +826,7 @@ const ManageCourses = () => {
                       <Typography variant="body2" fontWeight={600}>
                         {mentor.first_name} {mentor.last_name}
                       </Typography>
-                      <Typography variant="caption" color="#223a5e">
+                      <Typography variant="caption" color="text.secondary">
                         {mentor.email}
                       </Typography>
                     </Box>
@@ -785,7 +848,7 @@ const ManageCourses = () => {
               borderRadius: 2,
               px: 3,
               color: '#fff',
-              '&:hover': { bgcolor: '#003c8f' },
+              '&:hover': { bgcolor: '#1565c0' },
             }}
           >
             Assign

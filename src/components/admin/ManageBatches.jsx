@@ -2,19 +2,64 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../../api/axios';
 import {
-  Container, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Grid, Box, Select, MenuItem, FormControl, InputLabel, Chip, Alert,
-  OutlinedInput, Avatar, IconButton, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, List, ListItemButton, ListItemIcon,
-  ListItemText, Badge, Divider, Tooltip, TablePagination
+  Container,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Grid,
+  Box,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Alert,
+  OutlinedInput,
+  Avatar,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Badge,
+  Divider,
+  Tooltip,
+  TablePagination,
+  CircularProgress,
 } from '@mui/material';
 import {
-  Add, Edit, Delete, PersonAdd, Email, Phone, RemoveCircle, Person, School, CalendarToday,
-  Group, Dashboard as DashboardIcon, People, Assignment, Task, Menu as MenuIcon, Close
+  Add,
+  Edit,
+  Delete,
+  PersonAdd,
+  Email,
+  Phone,
+  RemoveCircle,
+  Person,
+  School,
+  CalendarToday,
+  Group,
+  Dashboard as DashboardIcon,
+  People,
+  Assignment,
+  Task,
+  Menu as MenuIcon,
+  Close,
 } from '@mui/icons-material';
 
-const BLUE = '#1565c0';
-const LIGHT_BLUE = '#e3f2fd';
+const BLUE = '#1976d2';
+const LIGHT_GREY = '#f5f7fa';
 
 const ManageBatches = () => {
   const [batches, setBatches] = useState([]);
@@ -29,13 +74,13 @@ const ManageBatches = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeNav, setActiveNav] = useState('batches');
-  
-  // ✅ Pagination state
+  const [loading, setLoading] = useState(false);
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     course_id: '',
@@ -49,7 +94,7 @@ const ManageBatches = () => {
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/admin/dashboard' },
-    { id: 'students', label: 'Manage users', icon: People, path: '/admin/manage-users' },
+    { id: 'students', label: 'Manage Users', icon: People, path: '/admin/manage-users' },
     { id: 'mentors', label: 'Mentors', icon: School, path: '/admin/create-mentor' },
     { id: 'courses', label: 'Courses', icon: Assignment, path: '/admin/manage-courses' },
     { id: 'batches', label: 'Batches', icon: School, path: '/admin/manage-batches' },
@@ -66,30 +111,41 @@ const ManageBatches = () => {
 
   const fetchBatches = async () => {
     try {
+      setLoading(true);
       const response = await API.get('/courses/batches/');
       setBatches(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch batches' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchCourses = async () => {
     try {
       const response = await API.get('/courses/');
       setCourses(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch courses' });
+    }
   };
 
   const fetchMentors = async () => {
     try {
       const response = await API.get('/auth/mentors/');
       setMentors(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch mentors' });
+    }
   };
 
   const fetchStudents = async () => {
     try {
       const response = await API.get('/auth/students/');
       setStudents(response.data);
-    } catch (error) { }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to fetch students' });
+    }
   };
 
   const fetchBatchStudents = async (batchId) => {
@@ -101,7 +157,6 @@ const ManageBatches = () => {
     }
   };
 
-  // ✅ Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -111,11 +166,7 @@ const ManageBatches = () => {
     setPage(0);
   };
 
-  // ✅ Calculate paginated data
-  const paginatedBatches = batches.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const paginatedBatches = batches.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const handleOpenDialog = (batch = null) => {
     if (batch) {
@@ -181,7 +232,7 @@ const ManageBatches = () => {
 
   const handleOpenStudentDialog = (batch) => {
     setSelectedBatch(batch);
-    setSelectedStudents(batch.students?.map(s => s.id) || []);
+    setSelectedStudents(batch.students?.map((s) => s.id) || []);
     setOpenStudentDialog(true);
   };
 
@@ -225,75 +276,75 @@ const ManageBatches = () => {
     }
   };
 
-  const getInitials = (firstName, lastName) => (
-    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase()
-  );
+  const getInitials = (firstName, lastName) =>
+    `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
 
-  // ✅ Simplified Sidebar - matching AdminDashboard
   const Sidebar = () => (
     <Box
       sx={{
         width: sidebarOpen ? 220 : 70,
-        height: 'calc(100vh - 64px)',
+        height: '100vh',
         bgcolor: '#fff',
-        color: '#333',
+        borderRight: '1px solid #e0e0e0',
+        transition: 'width 0.25s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
         display: 'flex',
         flexDirection: 'column',
-        position: 'fixed',
-        left: 0,
-        top: 64,
-        zIndex: 1000,
-        borderRight: `2px solid ${LIGHT_BLUE}`,
-        boxShadow: '2px 0 16px rgba(21,101,192,0.12)',
-        transition: 'width 0.18s',
-        p: 0,
-      }}>
-      {/* Toggle Button */}
-      <Box sx={{
-        p: 2,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarOpen ? 'flex-end' : 'center',
-      }}>
+        boxShadow: '2px 0 6px rgba(0,0,0,0.04)',
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: sidebarOpen ? 'space-between' : 'center',
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Admin
+          </Typography>
+        )}
         <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
           {sidebarOpen ? <Close /> : <MenuIcon />}
         </IconButton>
       </Box>
 
-      <Divider sx={{ borderColor: LIGHT_BLUE, mx: 2 }} />
+      <Divider />
 
-      {/* Navigation Items */}
-      <List sx={{ flex: 1, px: 1, py: 2 }}>
+      <List sx={{ flex: 1 }}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeNav === item.id;
           return (
             <ListItemButton
               key={item.id}
-              onClick={() => { setActiveNav(item.id); navigate(item.path); }}
+              onClick={() => {
+                setActiveNav(item.id);
+                navigate(item.path);
+              }}
               sx={{
-                borderRadius: 1.5,
-                color: isActive ? '#fff' : BLUE,
-                background: isActive ? BLUE : 'transparent',
-                mb: 0.5,
-                '&:hover': { background: LIGHT_BLUE },
-                px: 2,
-                py: 1.5,
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: isActive ? BLUE : 'transparent',
+                '&:hover': { backgroundColor: isActive ? BLUE : LIGHT_GREY },
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE, minWidth: 40 }}>
-                {item.badge ? (
-                  <Badge badgeContent={item.badge} color="error">
-                    <Icon />
-                  </Badge>
-                ) : (
-                  <Icon />
-                )}
+              <ListItemIcon sx={{ color: isActive ? '#fff' : BLUE }}>
+                <Icon fontSize="small" />
               </ListItemIcon>
               {sidebarOpen && (
                 <ListItemText
                   primary={item.label}
-                  primaryTypographyProps={{ fontWeight: isActive ? 700 : 400, color: isActive ? '#fff' : BLUE }}
+                  primaryTypographyProps={{
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#fff' : '#333',
+                  }}
                 />
               )}
             </ListItemButton>
@@ -304,21 +355,28 @@ const ManageBatches = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: LIGHT_BLUE, minHeight: '100vh', pt: '64px' }}>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin-left 0.2s' }}>
+      <Box sx={{ flex: 1, ml: sidebarOpen ? '220px' : '70px', transition: 'margin 0.25s ease' }}>
         <Container maxWidth="xl" sx={{ py: 4 }}>
-          <Paper elevation={0} sx={{
-            p: 3, mb: 4, borderRadius: 3, bgcolor: '#fff',
-            border: `1.5px solid ${BLUE}`,
-          }}>
+          {/* Header */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              bgcolor: '#fff',
+              border: '1px solid #e0e0e0',
+            }}
+          >
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: BLUE, mb: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, color: '#222', mb: 1 }}>
                   Manage Batches
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#223a5e' }}>
-                  Create and manage course batches, assign mentors and students
+                <Typography variant="body2" color="text.secondary">
+                  Create, edit, and manage course batches with mentors and students
                 </Typography>
               </Box>
               <Button
@@ -326,56 +384,83 @@ const ManageBatches = () => {
                 startIcon={<Add />}
                 onClick={() => handleOpenDialog()}
                 sx={{
-                  bgcolor: BLUE, color: '#fff', px: 3, py: 1.2, borderRadius: 2,
-                  fontWeight: 700, boxShadow: 'none',
-                  '&:hover': { bgcolor: '#003c8f' },
+                  bgcolor: BLUE,
+                  color: '#fff',
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: '#1565c0' },
                 }}
               >
-                Add New Batch
+                Add Batch
               </Button>
             </Box>
           </Paper>
 
+          {/* Message Alert */}
           {message.text && (
-            <Alert severity={message.type} sx={{
-              mb: 3, borderRadius: 2,
-              boxShadow: '0 2px 8px rgba(21,101,192,0.08)',
-              color: message.type === 'error' ? "#d32f2f" : BLUE,
-            }}
+            <Alert
+              severity={message.type}
+              sx={{ mb: 3, borderRadius: 2 }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
               {message.text}
             </Alert>
           )}
 
-          <Paper elevation={0} sx={{
-            borderRadius: 3,
-            border: `1.5px solid ${LIGHT_BLUE}`,
-            bgcolor: '#fff',
-            overflow: 'hidden'
-          }}>
+          {/* Table Section */}
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: '1px solid #e0e0e0',
+              bgcolor: '#fff',
+              overflow: 'hidden',
+            }}
+          >
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Batch Name</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Course</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Mentor</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Students</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Duration</TableCell>
-                    <TableCell sx={{ fontWeight: 700, color: BLUE }}>Status</TableCell>
-                    <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Actions</TableCell>
+                  <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Batch Name
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Course
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Mentor
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Students
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Duration
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Status
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: '#555', fontSize: '0.875rem' }}>
+                      Actions
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {batches.length === 0 ? (
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                        <CircularProgress sx={{ color: BLUE }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : batches.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                        <School sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                        <Typography variant="h6" color={BLUE} gutterBottom>
+                        <School sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+                        <Typography variant="h6" color="#555">
                           No Batches Yet
                         </Typography>
-                        <Typography variant="body2" color="#223a5e" sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                           Create your first batch to get started
                         </Typography>
                         <Button
@@ -384,11 +469,11 @@ const ManageBatches = () => {
                           onClick={() => handleOpenDialog()}
                           sx={{
                             bgcolor: BLUE,
-                            color: "#fff",
+                            color: '#fff',
                             borderRadius: 2,
                             px: 3,
                             fontWeight: 700,
-                            '&:hover': { bgcolor: '#003c8f' }
+                            '&:hover': { bgcolor: '#1565c0' },
                           }}
                         >
                           Create Batch
@@ -403,7 +488,7 @@ const ManageBatches = () => {
                         onClick={() => handleOpenViewStudentsDialog(batch)}
                         sx={{
                           cursor: 'pointer',
-                          '&:hover': { bgcolor: LIGHT_BLUE },
+                          '&:hover': { bgcolor: LIGHT_GREY },
                           transition: 'background-color 0.2s',
                         }}
                       >
@@ -415,16 +500,21 @@ const ManageBatches = () => {
                         <TableCell>
                           <Box display="flex" alignItems="center" gap={0.5}>
                             <School sx={{ fontSize: 16, color: BLUE }} />
-                            <Typography variant="body2">
-                              {batch.course.name}
-                            </Typography>
+                            <Typography variant="body2">{batch.course.name}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
                           {batch.mentor ? (
                             <Box display="flex" alignItems="center" gap={1}>
                               <Avatar
-                                sx={{ width: 32, height: 32, bgcolor: BLUE, fontWeight: 600 }}
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  bgcolor: BLUE,
+                                  fontWeight: 600,
+                                  color: '#fff',
+                                  fontSize: '0.875rem',
+                                }}
                               >
                                 {getInitials(batch.mentor.first_name, batch.mentor.last_name)}
                               </Avatar>
@@ -433,7 +523,7 @@ const ManageBatches = () => {
                               </Typography>
                             </Box>
                           ) : (
-                            <Typography variant="body2" color="#223a5e">
+                            <Typography variant="body2" color="text.secondary">
                               No Mentor
                             </Typography>
                           )}
@@ -444,9 +534,9 @@ const ManageBatches = () => {
                             label={`${batch.student_count || 0}/${batch.max_students}`}
                             size="small"
                             sx={{
-                              background: LIGHT_BLUE,
+                              bgcolor: LIGHT_GREY,
                               color: BLUE,
-                              fontWeight: 700,
+                              fontWeight: 600,
                             }}
                           />
                         </TableCell>
@@ -454,13 +544,13 @@ const ManageBatches = () => {
                           <Box>
                             <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
                               <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
-                              <Typography variant="caption" color={BLUE}>
+                              <Typography variant="caption">
                                 {new Date(batch.start_date).toLocaleDateString()}
                               </Typography>
                             </Box>
                             <Box display="flex" alignItems="center" gap={0.5}>
                               <CalendarToday sx={{ fontSize: 14, color: BLUE }} />
-                              <Typography variant="caption" color={BLUE}>
+                              <Typography variant="caption">
                                 {new Date(batch.end_date).toLocaleDateString()}
                               </Typography>
                             </Box>
@@ -471,11 +561,9 @@ const ManageBatches = () => {
                             label={batch.is_active ? 'Active' : 'Inactive'}
                             size="small"
                             sx={{
-                              background: batch.is_active
-                                ? BLUE
-                                : '#e0e0e0',
-                              color: batch.is_active ? '#fff' : BLUE,
-                              fontWeight: 700,
+                              bgcolor: batch.is_active ? BLUE : '#e0e0e0',
+                              color: batch.is_active ? '#fff' : '#999',
+                              fontWeight: 600,
                             }}
                           />
                         </TableCell>
@@ -492,7 +580,7 @@ const ManageBatches = () => {
                                   border: `1px solid ${BLUE}`,
                                   borderRadius: 1.5,
                                   color: BLUE,
-                                  '&:hover': { bgcolor: BLUE, color: "#fff" },
+                                  '&:hover': { bgcolor: BLUE, color: '#fff' },
                                 }}
                               >
                                 <PersonAdd fontSize="small" />
@@ -509,7 +597,7 @@ const ManageBatches = () => {
                                   border: `1px solid ${BLUE}`,
                                   borderRadius: 1.5,
                                   color: BLUE,
-                                  '&:hover': { bgcolor: BLUE, color: "#fff" },
+                                  '&:hover': { bgcolor: BLUE, color: '#fff' },
                                 }}
                               >
                                 <Edit fontSize="small" />
@@ -541,7 +629,6 @@ const ManageBatches = () => {
               </Table>
             </TableContainer>
 
-            {/* ✅ Pagination Component */}
             {batches.length > 0 && (
               <TablePagination
                 component="div"
@@ -552,323 +639,326 @@ const ManageBatches = () => {
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 rowsPerPageOptions={[5, 10, 25, 50]}
                 sx={{
-                  borderTop: `1px solid ${LIGHT_BLUE}`,
+                  borderTop: '1px solid #e0e0e0',
                   '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows': {
-                    color: BLUE,
-                    fontWeight: 500
-                  }
+                    color: '#555',
+                    fontWeight: 500,
+                  },
                 }}
               />
             )}
           </Paper>
+        </Container>
+      </Box>
 
-          {/* Create/Edit Batch Dialog */}
-          <Dialog
-            open={openDialog}
-            onClose={handleCloseDialog}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: { borderRadius: 3 } }}
-          >
-            <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
-              {selectedBatch ? 'Edit Batch' : 'Create New Batch'}
-            </DialogTitle>
-            <DialogContent sx={{ mt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Batch Name"
-                    value={formData.name}
-                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth required>
-                    <InputLabel>Course</InputLabel>
-                    <Select
-                      value={formData.course_id}
-                      onChange={e => setFormData({ ...formData, course_id: e.target.value })}
-                      label="Course"
-                      sx={{ borderRadius: 2 }}
-                    >
-                      {courses.map(course => (
-                        <MenuItem key={course.id} value={course.id}>{course.name}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel>Mentor</InputLabel>
-                    <Select
-                      value={formData.mentor_id}
-                      onChange={e => setFormData({ ...formData, mentor_id: e.target.value })}
-                      label="Mentor"
-                      sx={{ borderRadius: 2 }}
-                    >
-                      <MenuItem value="">None</MenuItem>
-                      {mentors.map(mentor => (
-                        <MenuItem key={mentor.id} value={mentor.id}>
-                          {mentor.first_name} {mentor.last_name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Start Date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="End Date"
-                    type="date"
-                    value={formData.end_date}
-                    onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Maximum Students"
-                    type="number"
-                    value={formData.max_students}
-                    onChange={e => setFormData({ ...formData, max_students: e.target.value })}
-                    inputProps={{ min: 1 }}
-                    required
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                  />
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-              <Button onClick={handleCloseDialog} sx={{ borderRadius: 2 }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                variant="contained"
-                sx={{
-                  bgcolor: BLUE,
-                  borderRadius: 2,
-                  px: 3,
-                  color: '#fff',
-                  '&:hover': { bgcolor: '#003c8f' },
-                }}
-              >
-                {selectedBatch ? 'Update' : 'Create'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          {/* Add Students Dialog */}
-          <Dialog
-            open={openStudentDialog}
-            onClose={() => setOpenStudentDialog(false)}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: { borderRadius: 3 } }}
-          >
-            <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
-              Add Students to {selectedBatch?.name}
-            </DialogTitle>
-            <DialogContent sx={{ mt: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Select Students</InputLabel>
+      {/* Create/Edit Batch Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
+          {selectedBatch ? 'Edit Batch' : 'Create New Batch'}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Batch Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth required>
+                <InputLabel>Course</InputLabel>
                 <Select
-                  multiple
-                  value={selectedStudents}
-                  onChange={e => setSelectedStudents(e.target.value)}
-                  input={<OutlinedInput label="Select Students" />}
+                  value={formData.course_id}
+                  onChange={(e) => setFormData({ ...formData, course_id: e.target.value })}
+                  label="Course"
                   sx={{ borderRadius: 2 }}
-                  renderValue={selected => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map(value => {
-                        const student = students.find(s => s.id === value);
-                        return (
-                          <Chip
-                            key={value}
-                            label={`${student?.first_name} ${student?.last_name}`}
-                            size="small"
-                            sx={{ background: LIGHT_BLUE, color: BLUE }}
-                          />
-                        );
-                      })}
-                    </Box>
-                  )}
                 >
-                  {students.map(student => (
-                    <MenuItem key={student.id} value={student.id}>
-                      {student.first_name} {student.last_name} ({student.username})
+                  {courses.map((course) => (
+                    <MenuItem key={course.id} value={course.id}>
+                      {course.name}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-              <Button onClick={() => setOpenStudentDialog(false)} sx={{ borderRadius: 2 }}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddStudents}
-                variant="contained"
-                sx={{
-                  bgcolor: BLUE,
-                  borderRadius: 2,
-                  px: 3,
-                  color: '#fff',
-                  '&:hover': { bgcolor: '#003c8f' },
-                }}
-              >
-                Add Students
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          {/* View Students Dialog */}
-          <Dialog
-            open={openViewStudentsDialog}
-            onClose={handleCloseViewStudentsDialog}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{ sx: { borderRadius: 3 } }}
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Mentor</InputLabel>
+                <Select
+                  value={formData.mentor_id}
+                  onChange={(e) => setFormData({ ...formData, mentor_id: e.target.value })}
+                  label="Mentor"
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="">None</MenuItem>
+                  {mentors.map((mentor) => (
+                    <MenuItem key={mentor.id} value={mentor.id}>
+                      {mentor.first_name} {mentor.last_name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Start Date"
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                required
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="End Date"
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                required
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Maximum Students"
+                type="number"
+                value={formData.max_students}
+                onChange={(e) => setFormData({ ...formData, max_students: e.target.value })}
+                inputProps={{ min: 1 }}
+                required
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseDialog} sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            sx={{
+              bgcolor: BLUE,
+              borderRadius: 2,
+              px: 3,
+              color: '#fff',
+              '&:hover': { bgcolor: '#1565c0' },
+            }}
           >
-            <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
-              <Person sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Students in {selectedBatch?.name}
-            </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
-              {batchStudents.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 6 }}>
-                  <Group sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-                  <Typography variant="body1" color={BLUE}>
-                    No students enrolled in this batch yet.
-                  </Typography>
+            {selectedBatch ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Students Dialog */}
+      <Dialog
+        open={openStudentDialog}
+        onClose={() => setOpenStudentDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
+          Add Students to {selectedBatch?.name}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <FormControl fullWidth>
+            <InputLabel>Select Students</InputLabel>
+            <Select
+              multiple
+              value={selectedStudents}
+              onChange={(e) => setSelectedStudents(e.target.value)}
+              input={<OutlinedInput label="Select Students" />}
+              sx={{ borderRadius: 2 }}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const student = students.find((s) => s.id === value);
+                    return (
+                      <Chip
+                        key={value}
+                        label={`${student?.first_name} ${student?.last_name}`}
+                        size="small"
+                        sx={{ bgcolor: LIGHT_GREY, color: BLUE }}
+                      />
+                    );
+                  })}
                 </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ bgcolor: LIGHT_BLUE }}>
-                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Student</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Username</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Email</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: BLUE }}>Phone</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700, color: BLUE }}>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {batchStudents.map(student => (
-                        <TableRow key={student.id} hover>
-                          <TableCell>
-                            <Box display="flex" alignItems="center" gap={1.5}>
-                              <Avatar
-                                sx={{
-                                  bgcolor: BLUE,
-                                  width: 36,
-                                  height: 36,
-                                  fontWeight: 600,
-                                  color: "#fff"
-                                }}
-                              >
-                                {getInitials(student.first_name, student.last_name)}
-                              </Avatar>
-                              <Box>
-                                <Typography variant="body2" fontWeight={600}>
-                                  {student.first_name} {student.last_name}
-                                </Typography>
-                                <Chip
-                                  label={student.is_approved ? 'Approved' : 'Pending'}
-                                  size="small"
-                                  sx={{
-                                    height: 18,
-                                    fontSize: '0.7rem',
-                                    background: student.is_approved
-                                      ? BLUE
-                                      : LIGHT_BLUE,
-                                    color: student.is_approved ? "#fff" : BLUE,
-                                    fontWeight: 600,
-                                  }}
-                                />
-                              </Box>
-                            </Box>
-                          </TableCell>
-                          <TableCell>{student.username}</TableCell>
-                          <TableCell>
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                              <Email sx={{ fontSize: 16, color: BLUE }} />
-                              {student.email}
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Box display="flex" alignItems="center" gap={0.5}>
-                              <Phone sx={{ fontSize: 16, color: BLUE }} />
-                              {student.phone || 'N/A'}
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleRemoveStudent(selectedBatch.id, student.id)}
-                              title="Remove from batch"
-                              sx={{
-                                color: 'error.main',
-                                '&:hover': {
-                                  bgcolor: 'error.main',
-                                  color: 'white',
-                                },
-                              }}
-                            >
-                              <RemoveCircle />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
               )}
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-              <Button onClick={handleCloseViewStudentsDialog} sx={{ borderRadius: 2 }}>
-                Close
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<PersonAdd />}
-                onClick={() => {
-                  handleCloseViewStudentsDialog();
-                  handleOpenStudentDialog(selectedBatch);
-                }}
-                sx={{
-                  bgcolor: BLUE,
-                  borderRadius: 2,
-                  px: 3,
-                  color: '#fff',
-                  '&:hover': { bgcolor: '#003c8f' }
-                }}
-              >
-                Add More Students
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Container>
-      </Box>
+            >
+              {students.map((student) => (
+                <MenuItem key={student.id} value={student.id}>
+                  {student.first_name} {student.last_name} ({student.username})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenStudentDialog(false)} sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddStudents}
+            variant="contained"
+            sx={{
+              bgcolor: BLUE,
+              borderRadius: 2,
+              px: 3,
+              color: '#fff',
+              '&:hover': { bgcolor: '#1565c0' },
+            }}
+          >
+            Add Students
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Students Dialog */}
+      <Dialog
+        open={openViewStudentsDialog}
+        onClose={handleCloseViewStudentsDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ bgcolor: BLUE, color: '#fff', fontWeight: 700 }}>
+          <Person sx={{ mr: 1, verticalAlign: 'middle' }} />
+          Students in {selectedBatch?.name}
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {batchStudents.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Group sx={{ fontSize: 64, color: '#ccc', mb: 2 }} />
+              <Typography variant="body1" color="#555">
+                No students enrolled in this batch yet.
+              </Typography>
+            </Box>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: LIGHT_GREY }}>
+                    <TableCell sx={{ fontWeight: 700, color: '#555' }}>Student</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555' }}>Username</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555' }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 700, color: '#555' }}>Phone</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700, color: '#555' }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {batchStudents.map((student) => (
+                    <TableRow key={student.id} hover>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1.5}>
+                          <Avatar
+                            sx={{
+                              bgcolor: BLUE,
+                              width: 36,
+                              height: 36,
+                              fontWeight: 600,
+                              color: '#fff',
+                              fontSize: '0.875rem',
+                            }}
+                          >
+                            {getInitials(student.first_name, student.last_name)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" fontWeight={600}>
+                              {student.first_name} {student.last_name}
+                            </Typography>
+                            <Chip
+                              label={student.is_approved ? 'Approved' : 'Pending'}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.7rem',
+                                bgcolor: student.is_approved ? BLUE : LIGHT_GREY,
+                                color: student.is_approved ? '#fff' : BLUE,
+                                fontWeight: 600,
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{student.username}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <Email sx={{ fontSize: 16, color: BLUE }} />
+                          {student.email}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <Phone sx={{ fontSize: 16, color: BLUE }} />
+                          {student.phone || 'N/A'}
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Remove from batch">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleRemoveStudent(selectedBatch.id, student.id)}
+                            sx={{
+                              color: '#d32f2f',
+                              '&:hover': { bgcolor: '#fff0f0', color: '#d32f2f' },
+                            }}
+                          >
+                            <RemoveCircle fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCloseViewStudentsDialog} sx={{ borderRadius: 2 }}>
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PersonAdd />}
+            onClick={() => {
+              handleCloseViewStudentsDialog();
+              handleOpenStudentDialog(selectedBatch);
+            }}
+            sx={{
+              bgcolor: BLUE,
+              borderRadius: 2,
+              px: 3,
+              color: '#fff',
+              '&:hover': { bgcolor: '#1565c0' },
+            }}
+          >
+            Add More Students
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

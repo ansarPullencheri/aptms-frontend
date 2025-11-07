@@ -7,6 +7,12 @@ import ProtectedRoute from './utils/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
+
+
+// Forgot/Reset Password
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
 // Admin Components
 import AdminDashboard from './components/admin/AdminDashboard';
 import StudentApproval from './components/admin/StudentApproval';
@@ -68,6 +74,12 @@ function AppContent() {
           path="/register" 
           element={user ? <Navigate to={`/${user.role}/dashboard`} /> : <Register />} 
         />
+
+         {/* Forgot / Reset Password */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        {/*   */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+
         
         {/* Admin Routes */}
         <Route

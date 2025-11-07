@@ -18,20 +18,26 @@ import {
   DialogContent,
   DialogActions,
   Divider,
-  Avatar,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
 } from '@mui/material';
 import {
   ArrowBack,
   Visibility,
   Close,
   Refresh,
-  School,
+  RateReview,
+  Dashboard as DashboardIcon,
+  Assignment,
+  CheckCircle,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 
-const BLUE = "#1565c0";
-const LIGHT_BLUE = "#e3f2fd";
-const GREEN = "#009688";
-const YELLOW = "#fbbc04";
+const BLUE = "#1976d2";
+const LIGHT_GREY = "#f5f7fa";
 
 const StudentProgressFeedback = () => {
   const navigate = useNavigate();
@@ -41,6 +47,15 @@ const StudentProgressFeedback = () => {
   const [selectedReview, setSelectedReview] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeNav, setActiveNav] = useState('feedback');
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: DashboardIcon, path: '/student/dashboard' },
+    { id: 'tasks', label: 'My Tasks', icon: Assignment, path: '/student/tasks' },
+    { id: 'submissions', label: 'Submissions', icon: CheckCircle, path: '/student/submissions' },
+    { id: 'feedback', label: 'My Feedback', icon: RateReview, path: '/student/progress-feedback' },
+  ];
 
   useEffect(() => {
     fetchStudentReviews();
@@ -49,50 +64,39 @@ const StudentProgressFeedback = () => {
   const fetchStudentReviews = async () => {
     try {
       setLoading(true);
-      console.log('📍 Fetching student progress reviews...');
-      
       const reviewsData = [];
       
-      // ✅ Fetch all weeks (1-12)
       for (let week = 1; week <= 12; week++) {
         try {
           const response = await API.get(`/tasks/student/weekly-review/${week}/`);
           
-          console.log(`✅ Week ${week} review found:`, response.data);
-          
-          // ✅ IMPORTANT: Only add if HAS feedback
           if (response.data.student_feedback || response.data.mentor_feedback) {
             reviewsData.push(response.data);
             
             if (!batchData && response.data.batch) {
               setBatchData(response.data.batch);
             }
-          } else {
-            console.log(`⚠️ Week ${week}: No feedback yet`);
           }
         } catch (error) {
-          console.log(`⚠️ Week ${week}: ${error.response?.status || error.message}`);
+          // Week not found or no data
         }
       }
       
-      console.log(`✅ Total reviews with feedback: ${reviewsData.length}`);
       setReviews(reviewsData);
       
       if (reviewsData.length === 0) {
         setMessage({
           type: 'info',
-          text: '📋 No feedback has been provided yet. Check back soon!',
+          text: 'No feedback has been provided yet. Check back soon!',
         });
       } else {
         setMessage({
           type: 'success',
-          text: `✅ Loaded ${reviewsData.length} feedback(s)`,
+          text: `Loaded ${reviewsData.length} feedback(s)`,
         });
         setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       }
-      
     } catch (error) {
-      console.error('❌ Error fetching reviews:', error);
       setMessage({
         type: 'error',
         text: `Error loading feedback: ${error.message}`,
@@ -113,343 +117,435 @@ const StudentProgressFeedback = () => {
   };
 
   const handleRefresh = () => {
-    console.log('🔄 Refreshing feedback...');
     fetchStudentReviews();
   };
 
+  const Sidebar = () => (
+    <Box
+      sx={{
+        width: sidebarOpen ? 220 : 70,
+        height: '100vh',
+        bgcolor: "#fff",
+        borderRight: "1px solid #e0e0e0",
+        transition: "width 0.25s ease",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "2px 0 6px rgba(0,0,0,0.04)",
+        zIndex: 10,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: sidebarOpen ? "space-between" : "center",
+          p: 2,
+        }}
+      >
+        {sidebarOpen && (
+          <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700 }}>
+            Student
+          </Typography>
+        )}
+        <IconButton onClick={() => setSidebarOpen(!sidebarOpen)} sx={{ color: BLUE }}>
+          {sidebarOpen ? <Close /> : <MenuIcon />}
+        </IconButton>
+      </Box>
+
+      <Divider />
+
+      <List sx={{ flex: 1 }}>
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = activeNav === item.id;
+          return (
+            <ListItemButton
+              key={item.id}
+              onClick={() => {
+                setActiveNav(item.id);
+                navigate(item.path);
+              }}
+              sx={{
+                mx: 1,
+                my: 0.5,
+                borderRadius: 2,
+                backgroundColor: active ? BLUE : "transparent",
+                "&:hover": { backgroundColor: active ? BLUE : LIGHT_GREY },
+              }}
+            >
+              <ListItemIcon sx={{ color: active ? "#fff" : BLUE }}>
+                <Icon fontSize="small" />
+              </ListItemIcon>
+              {sidebarOpen && (
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    fontWeight: active ? 600 : 400,
+                    color: active ? "#fff" : "#333",
+                  }}
+                />
+              )}
+            </ListItemButton>
+          );
+        })}
+      </List>
+    </Box>
+  );
+
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          bgcolor: LIGHT_GREY,
+        }}
+      >
         <CircularProgress sx={{ color: BLUE }} />
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Back Button */}
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => navigate('/student/dashboard')}
-        sx={{
-          mb: 2,
-          borderRadius: 2,
-          color: BLUE,
-          bgcolor: "#fff",
-          border: `1px solid ${LIGHT_BLUE}`,
-          '&:hover': { bgcolor: LIGHT_BLUE }
-        }}
-      >
-        Back to Dashboard
-      </Button>
+    <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
+      <Sidebar />
 
-      {/* Header */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 3, bgcolor: "#fff", border: `1.5px solid ${BLUE}` }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box flex={1}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: BLUE, color: '#fff' }}>
-                <School sx={{ fontSize: 32 }} />
-              </Avatar>
+      <Box sx={{ flex: 1, ml: sidebarOpen ? "220px" : "70px", transition: "margin 0.25s ease" }}>
+        <Container maxWidth="lg" sx={{ py: 5 }}>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/student/dashboard')}
+            sx={{
+              mb: 3,
+              color: BLUE,
+              fontWeight: 600,
+              '&:hover': { bgcolor: LIGHT_GREY }
+            }}
+          >
+            Back to Dashboard
+          </Button>
+
+          <Typography variant="h4" sx={{ fontWeight: 700, color: "#222", mb: 4 }}>
+            My Feedback 📋
+          </Typography>
+
+          {/* Header Card */}
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              border: "1px solid #e0e0e0",
+              bgcolor: "#fff"
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
-                <Typography variant="h4" sx={{ color: BLUE, fontWeight: 700, mb: 0.5 }}>
-                  📋 My Weekly Feedback
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "#222", mb: 1 }}>
+                  Weekly Mentor Feedback
                 </Typography>
-                <Typography variant="body2" color="#223a5e">
+                <Typography variant="body2" color="text.secondary">
                   Review your mentor's feedback and progress notes
                 </Typography>
+                {batchData && (
+                  <Chip
+                    label={batchData.name}
+                    size="small"
+                    sx={{
+                      bgcolor: LIGHT_GREY,
+                      color: BLUE,
+                      fontWeight: 600,
+                      mt: 2
+                    }}
+                  />
+                )}
               </Box>
+              
+              <Button
+                variant="outlined"
+                startIcon={<Refresh />}
+                onClick={handleRefresh}
+                sx={{
+                  color: BLUE,
+                  borderColor: "#e0e0e0",
+                  fontWeight: 600,
+                  '&:hover': { 
+                    borderColor: BLUE,
+                    bgcolor: LIGHT_GREY
+                  }
+                }}
+              >
+                Refresh
+              </Button>
             </Box>
-            {batchData && (
-              <Box>
-                <Chip
-                  label={batchData.name}
-                  sx={{
-                    bgcolor: LIGHT_BLUE,
-                    color: BLUE,
-                    fontWeight: 700,
-                    mr: 1,
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
-          
-          {/* Refresh Button */}
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            sx={{
-              borderColor: BLUE,
-              color: BLUE,
-              borderRadius: 2,
-              fontWeight: 700,
+          </Paper>
+
+          {/* Messages */}
+          {message.text && (
+            <Alert
+              severity={message.type}
+              sx={{ mb: 3, borderRadius: 2 }}
+              onClose={() => setMessage({ type: '', text: '' })}
+            >
+              {message.text}
+            </Alert>
+          )}
+
+          {/* No Reviews State */}
+          {reviews.length === 0 ? (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                borderRadius: 3,
+                border: "1px solid #e0e0e0",
+                bgcolor: "#fff"
+              }}
+            >
+              <RateReview sx={{ fontSize: 64, color: "#ccc", mb: 2 }} />
+              <Typography variant="h6" color="#555" sx={{ mb: 1 }}>
+                No Feedback Yet
+              </Typography>
+              <Typography color="text.secondary" sx={{ mb: 3 }}>
+                Your mentor hasn't provided any feedback yet. Keep an eye on this page!
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Refresh />}
+                onClick={handleRefresh}
+                sx={{
+                  bgcolor: BLUE,
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: "#1565c0" }
+                }}
+              >
+                Check Again
+              </Button>
+            </Paper>
+          ) : (
+            <>
+              <Alert severity="success" sx={{ mb: 4, borderRadius: 2 }}>
+                You have {reviews.length} feedback(s) from your mentor
+              </Alert>
+
+              <Grid container spacing={3}>
+                {reviews.map((review) => (
+                  <Grid item xs={12} sm={6} md={4} key={review.id || review.week_number}>
+                    <Card
+                      elevation={0}
+                      sx={{
+                        borderRadius: 3,
+                        border: "1px solid #e0e0e0",
+                        height: '100%',
+                        transition: 'all 0.3s',
+                        cursor: 'pointer',
+                        bgcolor: "#fff",
+                        '&:hover': {
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                          transform: 'translateY(-2px)',
+                        }
+                      }}
+                      onClick={() => handleViewReview(review)}
+                    >
+                      <CardContent sx={{ p: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              color: BLUE,
+                              fontWeight: 700,
+                            }}
+                          >
+                            Week {review.week_number}
+                          </Typography>
+                          <Chip
+                            icon={<Visibility sx={{ fontSize: 14 }} />}
+                            label="View"
+                            size="small"
+                            sx={{
+                              bgcolor: BLUE,
+                              color: '#fff',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          />
+                        </Box>
+
+                        <Divider sx={{ my: 1.5 }} />
+
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                          {review.student_feedback && (
+                            <Chip
+                              label="Feedback"
+                              size="small"
+                              sx={{
+                                bgcolor: "#4caf50",
+                                color: '#fff',
+                                fontWeight: 600,
+                              }}
+                            />
+                          )}
+                          {review.mentor_feedback && (
+                            <Chip
+                              label="Notes"
+                              size="small"
+                              sx={{
+                                bgcolor: "#ff9800",
+                                color: '#fff',
+                                fontWeight: 600,
+                              }}
+                            />
+                          )}
+                        </Box>
+
+                        <Typography variant="caption" color="text.secondary">
+                          {review.reviewed_at ? new Date(review.reviewed_at).toLocaleDateString() : 'Pending'}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </>
+          )}
+
+          {/* Feedback Detail Dialog */}
+          <Dialog
+            open={openDialog}
+            onClose={handleCloseDialog}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: { borderRadius: 2 }
             }}
           >
-            Refresh
-          </Button>
-        </Box>
-      </Paper>
+            <DialogTitle
+              sx={{
+                bgcolor: LIGHT_GREY,
+                color: BLUE,
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                pr: 1
+              }}
+            >
+              Week {selectedReview?.week_number} Feedback
+              <IconButton
+                onClick={handleCloseDialog}
+                sx={{ color: BLUE, p: 0 }}
+              >
+                <Close />
+              </IconButton>
+            </DialogTitle>
 
-      {/* Messages */}
-      {message.text && (
-        <Alert
-          severity={message.type}
-          sx={{ mb: 2, borderRadius: 2 }}
-          onClose={() => setMessage({ type: '', text: '' })}
-        >
-          {message.text}
-        </Alert>
-      )}
+            <DialogContent sx={{ mt: 2.5 }}>
+              {selectedReview?.student_feedback ? (
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      color: "#555",
+                      fontWeight: 700,
+                      mb: 1.5,
+                    }}
+                  >
+                    Mentor Feedback
+                  </Typography>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2.5,
+                      bgcolor: LIGHT_GREY,
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.7,
+                        color: "text.secondary"
+                      }}
+                    >
+                      {selectedReview.student_feedback}
+                    </Typography>
+                  </Paper>
+                </Box>
+              ) : (
+                <Box sx={{ mb: 3, p: 2, bgcolor: LIGHT_GREY, borderRadius: 2, textAlign: 'center' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    No feedback for this week
+                  </Typography>
+                </Box>
+              )}
 
-      {/* No Reviews State */}
-      {reviews.length === 0 ? (
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2, border: `1.5px solid ${LIGHT_BLUE}` }}>
-          <School sx={{ fontSize: 64, color: LIGHT_BLUE, mb: 2 }} />
-          <Typography variant="h6" color={BLUE} sx={{ mb: 1 }}>
-            📋 No Feedback Yet
-          </Typography>
-          <Typography color="#666" sx={{ mb: 3 }}>
-            Your mentor hasn't provided any feedback yet. Keep an eye on this page!
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            sx={{
-              borderColor: BLUE,
-              color: BLUE,
-              borderRadius: 2,
-              fontWeight: 700,
-            }}
-          >
-            Check Again
-          </Button>
-        </Paper>
-      ) : (
-        <>
-          <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
-            ✅ You have {reviews.length} feedback(s) from your mentor
-          </Alert>
-
-          <Grid container spacing={2}>
-            {reviews.map((review) => (
-              <Grid item xs={12} sm={6} md={4} key={review.id || review.week_number}>
-                <Card
-                  sx={{
-                    borderRadius: 2,
-                    border: `2px solid ${LIGHT_BLUE}`,
-                    height: '100%',
-                    transition: 'all 0.3s',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      border: `2px solid ${BLUE}`,
-                      boxShadow: `0 8px 24px rgba(21,101,192,0.15)`,
-                      transform: 'translateY(-2px)',
-                    }
-                  }}
-                  onClick={() => handleViewReview(review)}
-                >
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              {selectedReview?.mentor_feedback && (
+                <>
+                  <Divider sx={{ my: 2.5 }} />
+                  
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: "#555",
+                        fontWeight: 700,
+                        mb: 1.5,
+                      }}
+                    >
+                      Additional Notes
+                    </Typography>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2.5,
+                        bgcolor: "#fffbf0",
+                        border: "1px solid #ffe0b2",
+                        borderRadius: 2,
+                      }}
+                    >
                       <Typography
-                        variant="h6"
+                        variant="body2"
                         sx={{
-                          color: BLUE,
-                          fontWeight: 700,
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.7,
+                          color: "text.secondary"
                         }}
                       >
-                        Week {review.week_number}
+                        {selectedReview.mentor_feedback}
                       </Typography>
-                      <Chip
-                        label="View"
-                        size="small"
-                        icon={<Visibility sx={{ fontSize: 14 }} />}
-                        sx={{
-                          bgcolor: BLUE,
-                          color: '#fff',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      />
-                    </Box>
+                    </Paper>
+                  </Box>
+                </>
+              )}
+            </DialogContent>
 
-                    <Divider sx={{ my: 1.5 }} />
-
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
-                      {review.student_feedback && (
-                        <Chip
-                          label="💬 Feedback"
-                          size="small"
-                          sx={{
-                            bgcolor: GREEN,
-                            color: '#fff',
-                            fontWeight: 700,
-                          }}
-                        />
-                      )}
-                      {review.mentor_feedback && (
-                        <Chip
-                          label="🔒 Notes"
-                          size="small"
-                          sx={{
-                            bgcolor: YELLOW,
-                            color: '#222',
-                            fontWeight: 700,
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    <Typography variant="caption" color="#666">
-                      📅 {review.reviewed_at ? new Date(review.reviewed_at).toLocaleDateString() : 'Pending'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </>
-      )}
-
-      {/* Feedback Detail Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 }
-        }}
-      >
-        <DialogTitle
-          sx={{
-            bgcolor: LIGHT_BLUE,
-            color: BLUE,
-            fontWeight: 700,
-            fontSize: '1.3rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            pr: 1
-          }}
-        >
-          📋 Week {selectedReview?.week_number} Feedback
-          <Button
-            onClick={handleCloseDialog}
-            sx={{ color: BLUE, minWidth: 'auto', p: 0 }}
-          >
-            <Close />
-          </Button>
-        </DialogTitle>
-
-        <DialogContent sx={{ mt: 3 }}>
-          {/* Student Feedback (Visible to student) */}
-          {selectedReview?.student_feedback ? (
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="h6"
+            <DialogActions sx={{ p: 2.5, borderTop: "1px solid #e0e0e0" }}>
+              <Button
+                onClick={handleCloseDialog}
+                variant="contained"
                 sx={{
-                  color: GREEN,
-                  fontWeight: 700,
-                  mb: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
+                  bgcolor: BLUE,
+                  fontWeight: 600,
+                  '&:hover': { bgcolor: "#1565c0" }
                 }}
               >
-                💬 Mentor's Feedback
-              </Typography>
-              <Paper
-                sx={{
-                  p: 2.5,
-                  bgcolor: '#e8f5e9',
-                  borderLeft: `4px solid ${GREEN}`,
-                  borderRadius: 1,
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.7,
-                    color: '#333'
-                  }}
-                >
-                  {selectedReview.student_feedback}
-                </Typography>
-              </Paper>
-            </Box>
-          ) : (
-            <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1, textAlign: 'center' }}>
-              <Typography color="#999" variant="body2">
-                No feedback for this week
-              </Typography>
-            </Box>
-          )}
-
-          <Divider sx={{ my: 2.5 }} />
-
-          {/* Mentor Internal Notes */}
-          {selectedReview?.mentor_feedback && (
-            <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: YELLOW,
-                  fontWeight: 700,
-                  mb: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
-              >
-                🔒 Additional Notes
-              </Typography>
-              <Paper
-                sx={{
-                  p: 2.5,
-                  bgcolor: '#fef7e0',
-                  borderLeft: `4px solid ${YELLOW}`,
-                  borderRadius: 1,
-                  boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.7,
-                    color: '#333'
-                  }}
-                >
-                  {selectedReview.mentor_feedback}
-                </Typography>
-              </Paper>
-            </Box>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2.5, borderTop: `1px solid ${LIGHT_BLUE}` }}>
-          <Button
-            onClick={handleCloseDialog}
-            variant="contained"
-            sx={{
-              bgcolor: BLUE,
-              color: '#fff',
-              borderRadius: 1.5,
-              fontWeight: 700,
-              px: 3,
-              '&:hover': { bgcolor: "#003c8f" }
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Container>
+      </Box>
+    </Box>
   );
 };
 
