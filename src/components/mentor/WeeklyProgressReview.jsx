@@ -374,7 +374,7 @@ const WeeklyProgressReview = () => {
 
             <Grid container spacing={2} mb={3}>
               <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth>
+                <FormControl fullWidth sx={{ minWidth: 140 }}>
                   <InputLabel>Select Batch</InputLabel>
                   <Select
                     value={selectedBatch}
@@ -393,7 +393,7 @@ const WeeklyProgressReview = () => {
               </Grid>
 
               <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth disabled={!selectedBatch || loadingStudents}>
+                <FormControl fullWidth disabled={!selectedBatch || loadingStudents} sx={{ minWidth: 140 }}>
                   <InputLabel>Select Student</InputLabel>
                   <Select
                     value={selectedStudent}
@@ -493,10 +493,10 @@ const WeeklyProgressReview = () => {
 
           {/* Feedback Section */}
           {selectedStudent ? (
-            <Grid container spacing={3}>
+            <Grid container spacing={3} >
               {/* Student Info Card */}
-              <Grid item xs={12} md={4}>
-                <Card sx={{ borderRadius: 3, border: '1px solid #e0e0e0', height: '100%' }}>
+              <Grid item xs={12} md={4} >
+                <Card sx={{ borderRadius: 3, border: '1px solid #e0e0e0', height: '100%', width: '450px', }}>
                   <CardContent>
                     <Typography variant="h6" sx={{ color: BLUE, fontWeight: 700, mb: 2 }}>
                       👤 Student Info
@@ -557,7 +557,7 @@ const WeeklyProgressReview = () => {
               {/* Feedback Cards */}
               <Grid item xs={12} md={8}>
                 {/* Mentor Feedback */}
-                <Card sx={{ mb: 3, borderRadius: 3, border: `2px solid ${YELLOW}` }}>
+                <Card sx={{ mb: 3, borderRadius: 3, border: `2px solid ${YELLOW}`,width: '450px' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                       <Typography variant="h6" sx={{ color: YELLOW, fontWeight: 700 }}>

@@ -572,7 +572,7 @@ const StudentApproval = () => {
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  <FormControl fullWidth required>
+                  <FormControl fullWidth required sx={{ minWidth: 140 }}>
                     <InputLabel>Select Course</InputLabel>
                     <Select
                       value={assignmentData.course_id}

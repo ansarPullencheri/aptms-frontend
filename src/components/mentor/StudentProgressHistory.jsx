@@ -162,8 +162,8 @@ const StudentProgressHistory = () => {
               📋 Progress History
             </Typography>
             {studentData && (
-              <Box>
-                <Typography variant="body1" color="#223a5e">
+              <Box >
+                <Typography variant="body1" color="#223a5e" >
                   Student: <strong>{studentData.name}</strong> ({studentData.email})
                 </Typography>
                 <Typography variant="caption" color="#666">

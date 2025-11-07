@@ -208,7 +208,7 @@ const Register = () => {
 
                 {/* Gender / DOB */}
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth sx={{ minWidth: 220 }}>
                     <InputLabel>Gender</InputLabel>
                     <Select
                       name="gender"
@@ -237,7 +237,7 @@ const Register = () => {
 
                 {/* Blood / Address */}
                 <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth>
+                  <FormControl fullWidth sx={{ minWidth: 225 }}>
                     <InputLabel>Blood Group</InputLabel>
                     <Select
                       name="blood_group"
@@ -255,7 +255,7 @@ const Register = () => {
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={6} >
                   <TextField
                     fullWidth
                     label="Address"

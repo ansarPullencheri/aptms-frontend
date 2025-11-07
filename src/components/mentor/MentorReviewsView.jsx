@@ -345,7 +345,7 @@ const MentorReviewsView = () => {
 
             <Grid container spacing={2} mb={3}>
               <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small">
+                <FormControl fullWidth size="small" sx={{ minWidth: 140 }}>
                   <InputLabel>Filter by Batch</InputLabel>
                   <Select
                     value={selectedBatch}
@@ -364,7 +364,7 @@ const MentorReviewsView = () => {
               </Grid>
 
               <Grid item xs={12} sm={6} md={4}>
-                <FormControl fullWidth size="small" disabled={!selectedBatch}>
+                <FormControl fullWidth size="small" disabled={!selectedBatch} sx={{ minWidth: 140 }}>
                   <InputLabel>Filter by Student</InputLabel>
                   <Select
                     value={selectedStudent}
