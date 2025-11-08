@@ -95,7 +95,7 @@ const CreateTask = () => {
     try {
       const response = await API.get('/courses/');
       setCourses(response.data);
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to fetch courses' });
     }
   };
@@ -105,7 +105,7 @@ const CreateTask = () => {
       const response = await API.get('/courses/batches/');
       const courseBatches = response.data.filter((b) => b.course.id === parseInt(courseId));
       setBatches(courseBatches);
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to fetch batches' });
     }
   };
@@ -114,7 +114,7 @@ const CreateTask = () => {
     try {
       const response = await API.get(`/courses/batches/${batchId}/students/`);
       setStudents(response.data.students || []);
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to fetch students' });
     }
   };
@@ -234,228 +234,202 @@ const CreateTask = () => {
           )}
 
           <Paper elevation={0} sx={{ p: 4, borderRadius: 3, bgcolor: '#fff', border: '1px solid #e0e0e0' }}>
-            <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
-              Create New Task
-            </Typography>
+           <Typography
+  variant="h5"
+  sx={{
+    mb: 3,
+    fontWeight: 700,
+    textAlign: 'center',
+    color: '#1976d2', 
+  }}
+>
+  Create New Task
+</Typography>
 
-            <Box component="form" onSubmit={handleSubmit}>
-              <Grid container spacing={3}>
-                {/* Task Details */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                    Task Details
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Task Title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Maximum Marks"
-                    type="number"
-                    value={formData.max_marks}
-                    onChange={(e) => setFormData({ ...formData, max_marks: parseInt(e.target.value) || 0 })}
-                    inputProps={{ min: 1, max: 1000 }}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    required
-                  />
-                </Grid>
 
-                {/* Course & Batch */}
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-                    Course & Batch
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <FormControl fullWidth required sx={{ minWidth: 140 }}>
-                    <InputLabel >Course</InputLabel>
-                    <Select
-                      value={formData.course_id}
-                      onChange={(e) =>
-                        setFormData({ ...formData, course_id: e.target.value, batch_id: '', assigned_to_ids: [] })
-                      }
-                    >
-                      {courses.length === 0 ? (
-                        <MenuItem disabled>No courses available</MenuItem>
-                      ) : (
-                        courses.map((course) => (
-                          <MenuItem key={course.id} value={course.id}>
-                            {course.name} ({course.code})
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-                  </FormControl>
-                </Grid>
+            <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                fullWidth
+                label="Task Title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
 
-                <Grid item xs={12} sm={6}>
-                  {formData.task_type === 'batch' && (
-                    <FormControl fullWidth required disabled={!formData.course_id} sx={{ minWidth: 140 }}>
-                      <InputLabel>Batch</InputLabel>
+              <TextField
+                fullWidth
+                label="Maximum Marks"
+                type="number"
+                value={formData.max_marks}
+                onChange={(e) => setFormData({ ...formData, max_marks: parseInt(e.target.value) || 0 })}
+                inputProps={{ min: 1, max: 1000 }}
+                required
+              />
+
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+              />
+
+              <FormControl fullWidth required>
+                <InputLabel>Course</InputLabel>
+                <Select
+                  value={formData.course_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, course_id: e.target.value, batch_id: '', assigned_to_ids: [] })
+                  }
+                >
+                  {courses.length === 0 ? (
+                    <MenuItem disabled>No courses available</MenuItem>
+                  ) : (
+                    courses.map((course) => (
+                      <MenuItem key={course.id} value={course.id}>
+                        {course.name} ({course.code})
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
+
+              {formData.task_type === 'batch' && (
+                <FormControl fullWidth required disabled={!formData.course_id}>
+                  <InputLabel>Batch</InputLabel>
+                  <Select
+                    value={formData.batch_id}
+                    onChange={(e) => setFormData({ ...formData, batch_id: e.target.value, assigned_to_ids: [] })}
+                  >
+                    {batches.length === 0 ? (
+                      <MenuItem disabled>No batches available</MenuItem>
+                    ) : (
+                      batches.map((batch) => (
+                        <MenuItem key={batch.id} value={batch.id}>
+                          {batch.name}
+                        </MenuItem>
+                      ))
+                    )}
+                  </Select>
+                </FormControl>
+              )}
+
+              <FormControl>
+                <FormLabel sx={{ fontWeight: 600 }}>Task Type</FormLabel>
+                <RadioGroup
+                  row
+                  value={formData.task_type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, task_type: e.target.value, batch_id: '', assigned_to_ids: [] })
+                  }
+                >
+                  <FormControlLabel value="batch" control={<Radio sx={{ color: BLUE }} />} label="Batch Specific" />
+                  <FormControlLabel value="course" control={<Radio sx={{ color: BLUE }} />} label="Course Wide" />
+                </RadioGroup>
+              </FormControl>
+
+              {formData.task_type === 'batch' && (
+                <>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={assignToAll}
+                        onChange={(e) => {
+                          setAssignToAll(e.target.checked);
+                          if (e.target.checked) setFormData({ ...formData, assigned_to_ids: [] });
+                        }}
+                      />
+                    }
+                    label="Assign to all students in the batch"
+                  />
+
+                  {!assignToAll && (
+                    <FormControl fullWidth>
+                      <InputLabel>Select Students</InputLabel>
                       <Select
-                        value={formData.batch_id}
-                        onChange={(e) => setFormData({ ...formData, batch_id: e.target.value, assigned_to_ids: [] })}
-                      >
-                        {batches.length === 0 ? (
-                          <MenuItem disabled>No batches available</MenuItem>
-                        ) : (
-                          batches.map((batch) => <MenuItem key={batch.id} value={batch.id}>{batch.name}</MenuItem>)
+                        multiple
+                        value={formData.assigned_to_ids}
+                        onChange={(e) => setFormData({ ...formData, assigned_to_ids: e.target.value })}
+                        input={<OutlinedInput label="Select Students" />}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {selected.map((value) => {
+                              const student = students.find((s) => s.id === value);
+                              return <Chip key={value} label={`${student?.first_name}`} size="small" />;
+                            })}
+                          </Box>
                         )}
+                      >
+                        {students.map((s) => (
+                          <MenuItem key={s.id} value={s.id}>
+                            {s.first_name} {s.last_name}
+                          </MenuItem>
+                        ))}
                       </Select>
                     </FormControl>
                   )}
-                </Grid>
+                </>
+              )}
 
-                {/* Task Type */}
-                <Grid item xs={12}>
-                  <FormControl>
-                    <FormLabel sx={{ fontWeight: 600 }}>Task Type</FormLabel>
-                    <RadioGroup
-                      row
-                      value={formData.task_type}
-                      onChange={(e) =>
-                        setFormData({ ...formData, task_type: e.target.value, batch_id: '', assigned_to_ids: [] })
-                      }
-                    >
-                      <FormControlLabel value="batch" control={<Radio sx={{ color: BLUE }} />} label="Batch Specific" />
-                      <FormControlLabel value="course" control={<Radio sx={{ color: BLUE }} />} label="Course Wide" />
-                    </RadioGroup>
-                  </FormControl>
-                </Grid>
-
-                {/* Assign Students */}
-                {formData.task_type === 'batch' && (
-                  <>
-                    <Grid item xs={12}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={assignToAll}
-                            onChange={(e) => {
-                              setAssignToAll(e.target.checked);
-                              if (e.target.checked) setFormData({ ...formData, assigned_to_ids: [] });
-                            }}
-                          />
-                        }
-                        label="Assign to all students in the batch"
-                      />
-                    </Grid>
-                    {!assignToAll && (
-                      <Grid item xs={12}>
-                        <FormControl fullWidth>
-                          <InputLabel>Select Students</InputLabel>
-                          <Select
-                            multiple
-                            value={formData.assigned_to_ids}
-                            onChange={(e) => setFormData({ ...formData, assigned_to_ids: e.target.value })}
-                            input={<OutlinedInput label="Select Students" />}
-                            renderValue={(selected) => (
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {selected.map((value) => {
-                                  const student = students.find((s) => s.id === value);
-                                  return <Chip key={value} label={`${student?.first_name}`} size="small" />;
-                                })}
-                              </Box>
-                            )}
-                          >
-                            {students.map((s) => (
-                              <MenuItem key={s.id} value={s.id}>
-                                {s.first_name} {s.last_name}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    )}
-                  </>
-                )}
-
-                {/* Schedule & Dates */}
-                <Grid item xs={12}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.is_scheduled}
-                        onChange={(e) => setFormData({ ...formData, is_scheduled: e.target.checked })}
-                      />
-                    }
-                    label="Schedule Release Date"
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.is_scheduled}
+                    onChange={(e) => setFormData({ ...formData, is_scheduled: e.target.checked })}
                   />
-                </Grid>
-                {formData.is_scheduled && (
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      type="datetime-local"
-                      label="Release Date & Time"
-                      value={formData.release_date}
-                      onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                )}
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="datetime-local"
-                    label="Due Date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    required
-                  />
-                </Grid>
+                }
+                label="Schedule Release Date"
+              />
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Week Number"
-                    value={formData.week_number}
-                    onChange={(e) => setFormData({ ...formData, week_number: parseInt(e.target.value) || 1 })}
-                  />
-                </Grid>
+              {formData.is_scheduled && (
+                <TextField
+                  fullWidth
+                  type="datetime-local"
+                  label="Release Date & Time"
+                  value={formData.release_date}
+                  onChange={(e) => setFormData({ ...formData, release_date: e.target.value })}
+                  InputLabelProps={{ shrink: true }}
+                />
+              )}
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Task Order"
-                    value={formData.task_order}
-                    onChange={(e) => setFormData({ ...formData, task_order: parseInt(e.target.value) || 0 })}
-                  />
-                </Grid>
+              <TextField
+                fullWidth
+                type="datetime-local"
+                label="Due Date"
+                value={formData.due_date}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                InputLabelProps={{ shrink: true }}
+                required
+              />
 
-                {/* Submit Buttons */}
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                    <Button variant="outlined" onClick={() => navigate('/admin/manage-tasks')} disabled={loading}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" variant="contained" disabled={loading}>
-                      {loading ? 'Creating...' : 'Create Task'}
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
+              <TextField
+                fullWidth
+                type="number"
+                label="Week Number"
+                value={formData.week_number}
+                onChange={(e) => setFormData({ ...formData, week_number: parseInt(e.target.value) || 1 })}
+              />
+
+              <TextField
+                fullWidth
+                type="number"
+                label="Task Order"
+                value={formData.task_order}
+                onChange={(e) => setFormData({ ...formData, task_order: parseInt(e.target.value) || 0 })}
+              />
+
+              <Divider sx={{ my: 2 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button variant="outlined" onClick={() => navigate('/admin/manage-tasks')} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="contained" disabled={loading}>
+                  {loading ? 'Creating...' : 'Create Task'}
+                </Button>
+              </Box>
             </Box>
           </Paper>
         </Container>

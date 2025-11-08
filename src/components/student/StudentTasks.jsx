@@ -240,7 +240,7 @@ const StudentTasks = () => {
       <Box sx={{ flex: 1, ml: sidebarOpen ? "220px" : "70px", transition: "margin 0.25s ease" }}>
         <Container maxWidth="xl" sx={{ py: 5 }}>
           <Typography variant="h4" sx={{ fontWeight: 700, color: "#222", mb: 4 }}>
-            My Tasks 📝
+            My Tasks 
           </Typography>
 
           {error && (

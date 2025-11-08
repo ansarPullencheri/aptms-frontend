@@ -248,7 +248,7 @@ const TaskSubmission = () => {
 
                 <Divider sx={{ mb: 3 }} />
 
-                <Box sx={{ mb: 4 }}>
+                <Box sx={{ mb: 4, minWidth: 900 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, color: BLUE, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Description /> Task Description
                   </Typography>
@@ -383,7 +383,7 @@ const TaskSubmission = () => {
             </Grid>
 
             {/* Task Info Sidebar */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={4}  sx={{ml:3.5, minWidth: 900 }}>
               <Paper sx={{ p: 3, borderRadius: 3, position: 'sticky', top: 20, border: `1.5px solid ${LIGHT_BLUE}`, bgcolor: "#fff" }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: BLUE, mb: 3 }}>
                   Task Information

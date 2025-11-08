@@ -649,11 +649,11 @@ const ManageCourses = () => {
         </Container>
       </Box>
 
-      {/* Create/Edit Course Dialog */}
+      {/* Create/Edit Course Dialog - FIXED WIDTH */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
-        maxWidth="sm"
+        maxWidth="md"  // Changed from "sm" to "md"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
@@ -713,7 +713,7 @@ const ManageCourses = () => {
               />
             </Grid>
 
-            {/* Syllabus Upload */}
+            {/* Syllabus Upload - FIXED */}
             <Grid item xs={12}>
               <Box
                 sx={{
@@ -722,6 +722,8 @@ const ManageCourses = () => {
                   p: 3,
                   textAlign: 'center',
                   bgcolor: '#f5f5f5',
+                  width: '75%', 
+                   // Takes full width of dialog
                 }}
               >
                 <UploadFile sx={{ fontSize: 48, color: BLUE, mb: 1 }} />

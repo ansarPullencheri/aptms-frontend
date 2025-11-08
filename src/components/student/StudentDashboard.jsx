@@ -190,11 +190,7 @@ const StudentDashboard = () => {
       value: dashboardData?.task_statistics.pending_tasks || 0,
       icon: PendingActions,
     },
-    {
-      title: 'Overall Score',
-      value: `${dashboardData?.academic_progress.overall_percentage || 0}%`,
-      icon: TrendingUp,
-    },
+   
   ];
 
   return (
@@ -236,7 +232,7 @@ const StudentDashboard = () => {
                       >
                         <Icon />
                       </Box>
-                      <Box>
+                      <Box sx={{ minWidth: 127 }}>
                         <Typography variant="body2" color="text.secondary">
                           {stat.title}
                         </Typography>
@@ -253,7 +249,7 @@ const StudentDashboard = () => {
 
           <Grid container spacing={3}>
             {/* Enrolled Batches Table */}
-            <Grid item xs={12} lg={6}>
+            <Grid item xs={12} lg={6} sx={{ minWidth: 480 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -315,7 +311,7 @@ const StudentDashboard = () => {
             </Grid>
 
             {/* Recent Submissions Table */}
-            <Grid item xs={12} lg={6}>
+            <Grid item xs={12} lg={6} sx={{ minWidth: 480 }}>
               <Paper
                 elevation={0}
                 sx={{
