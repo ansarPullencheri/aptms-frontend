@@ -97,7 +97,7 @@ const MentorCreateTask = () => {
         ...new Map(response.data.map((batch) => [batch.course.id, batch.course])).values(),
       ];
       setCourses(uniqueCourses);
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Failed to fetch your batches" });
     }
   };
@@ -106,7 +106,7 @@ const MentorCreateTask = () => {
     try {
       const response = await API.get(`/courses/batches/${batchId}/students/`);
       setStudents(response.data.students || []);
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Failed to fetch students" });
     }
   };
@@ -115,7 +115,6 @@ const MentorCreateTask = () => {
     e.preventDefault();
     setMessage({ type: "", text: "" });
     setLoading(true);
-
     try {
       const submitData = {
         ...formData,
@@ -141,9 +140,7 @@ const MentorCreateTask = () => {
       });
       setAssignToAll(true);
       setStudents([]);
-      setTimeout(() => {
-        navigate("/mentor/tasks");
-      }, 2000);
+      setTimeout(() => navigate("/mentor/tasks"), 2000);
     } catch (error) {
       setMessage({
         type: "error",
@@ -236,8 +233,7 @@ const MentorCreateTask = () => {
       <Sidebar />
 
       <Box sx={{ flex: 1, ml: sidebarOpen ? "220px" : "70px", transition: "margin 0.25s ease" }}>
-        <Container maxWidth="lg" sx={{ py: 5 }}>
-          {/* Back Button */}
+        <Container maxWidth="md" sx={{ py: 5 }}>
           <Button
             startIcon={<ArrowBack />}
             onClick={() => navigate("/mentor/batches")}
@@ -251,9 +247,6 @@ const MentorCreateTask = () => {
             Back to Batches
           </Button>
 
-         
-
-          {/* Messages */}
           {message.text && (
             <Alert
               severity={message.type}
@@ -264,7 +257,6 @@ const MentorCreateTask = () => {
             </Alert>
           )}
 
-          {/* Form */}
           <Paper
             elevation={0}
             sx={{
@@ -275,8 +267,7 @@ const MentorCreateTask = () => {
           >
             <Box sx={{ p: 4 }}>
               <Box component="form" onSubmit={handleSubmit}>
-                <Grid container spacing={3}>
-                  {/* Task Title */}
+                <Grid container spacing={3} direction="column">
                   <Grid item xs={12}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: "#222", mb: 2 }}>
                       Task Details
@@ -288,32 +279,24 @@ const MentorCreateTask = () => {
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       required
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  {/* Description */}
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Description"
-                      placeholder="Enter detailed task description..."
                       multiline
                       rows={5}
+                      placeholder="Enter detailed task description..."
                       value={formData.description}
-                      onChange={(e) =>
-                        setFormData({ ...formData, description: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       required
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
-                    <Divider />
-                  </Grid>
+                  <Divider />
 
-                  {/* Batch Selection */}
                   <Grid item xs={12}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: "#222", mb: 2 }}>
                       Assign To
@@ -330,24 +313,13 @@ const MentorCreateTask = () => {
                           });
                         }}
                         label="Select Batch"
-                        sx={{ borderRadius: 2 }}
                       >
                         {batches.length === 0 ? (
                           <MenuItem disabled>No batches available</MenuItem>
                         ) : (
                           batches.map((batch) => (
                             <MenuItem key={batch.id} value={batch.id}>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <People sx={{ fontSize: 18, color: BLUE }} />
-                                <Box>
-                                  <Typography variant="body2" fontWeight={600}>
-                                    {batch.name}
-                                  </Typography>
-                                  <Typography variant="caption" color="#666">
-                                    {batch.course.name} • {batch.student_count || 0} students
-                                  </Typography>
-                                </Box>
-                              </Box>
+                              {batch.name} — {batch.course.name}
                             </MenuItem>
                           ))
                         )}
@@ -355,47 +327,23 @@ const MentorCreateTask = () => {
                     </FormControl>
                   </Grid>
 
-                  {/* Assign to All / Specific Students */}
                   <Grid item xs={12}>
-                    <Card
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        bgcolor: "#f5f7fa",
-                        border: `1px solid #e0e0e0`,
-                        borderRadius: 2,
-                      }}
-                    >
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={assignToAll}
-                            onChange={(e) => {
-                              setAssignToAll(e.target.checked);
-                              if (e.target.checked)
-                                setFormData({ ...formData, assigned_to_ids: [] });
-                            }}
-                            disabled={!formData.batch_id}
-                            sx={{ color: BLUE }}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography variant="body2" fontWeight={600} sx={{ color: "#222" }}>
-                              Assign to all students
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {formData.batch_id && selectedBatch
-                                ? `${selectedBatch.student_count || 0} students in this batch`
-                                : "Select a batch first"}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </Card>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={assignToAll}
+                          onChange={(e) => {
+                            setAssignToAll(e.target.checked);
+                            if (e.target.checked)
+                              setFormData({ ...formData, assigned_to_ids: [] });
+                          }}
+                          disabled={!formData.batch_id}
+                        />
+                      }
+                      label="Assign to all students in batch"
+                    />
                   </Grid>
 
-                  {/* Specific Students */}
                   {!assignToAll && (
                     <Grid item xs={12}>
                       <FormControl fullWidth required disabled={!formData.batch_id}>
@@ -407,7 +355,6 @@ const MentorCreateTask = () => {
                             setFormData({ ...formData, assigned_to_ids: e.target.value })
                           }
                           input={<OutlinedInput label="Select Specific Students" />}
-                          sx={{ borderRadius: 2 }}
                           renderValue={(selected) => (
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                               {selected.map((value) => {
@@ -417,11 +364,7 @@ const MentorCreateTask = () => {
                                     key={value}
                                     label={`${student?.first_name} ${student?.last_name}`}
                                     size="small"
-                                    sx={{
-                                      bgcolor: BLUE,
-                                      color: "#fff",
-                                      fontWeight: 700,
-                                    }}
+                                    sx={{ bgcolor: BLUE, color: "#fff" }}
                                   />
                                 );
                               })}
@@ -434,29 +377,8 @@ const MentorCreateTask = () => {
                               <MenuItem key={student.id} value={student.id}>
                                 <Checkbox
                                   checked={formData.assigned_to_ids.indexOf(student.id) > -1}
-                                  sx={{ color: BLUE }}
                                 />
-                                <Avatar
-                                  sx={{
-                                    width: 32,
-                                    height: 32,
-                                    bgcolor: BLUE,
-                                    color: "#fff",
-                                    fontSize: "0.75rem",
-                                    fontWeight: 700,
-                                    mr: 1.5,
-                                  }}
-                                >
-                                  {student.first_name?.[0]}{student.last_name?.[0]}
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="body2" fontWeight={600} sx={{ color: "#222" }}>
-                                    {student.first_name} {student.last_name}
-                                  </Typography>
-                                  <Typography variant="caption" color="#666">
-                                    @{student.username}
-                                  </Typography>
-                                </Box>
+                                {student.first_name} {student.last_name}
                               </MenuItem>
                             ))}
                         </Select>
@@ -464,18 +386,15 @@ const MentorCreateTask = () => {
                     </Grid>
                   )}
 
-                  <Grid item xs={12}>
-                    <Divider />
-                  </Grid>
+                  <Divider />
 
-                  {/* Scheduling & Marks */}
                   <Grid item xs={12}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: "#222", mb: 2 }}>
                       Schedule & Grading
                     </Typography>
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       type="number"
@@ -484,14 +403,11 @@ const MentorCreateTask = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, week_number: parseInt(e.target.value) || 1 })
                       }
-                      inputProps={{ min: 1, max: 52 }}
-                      helperText="Course week (1-52)"
                       required
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       type="number"
@@ -500,13 +416,10 @@ const MentorCreateTask = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, task_order: parseInt(e.target.value) || 0 })
                       }
-                      inputProps={{ min: 0 }}
-                      helperText="Order within the week"
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Due Date & Time"
@@ -514,11 +427,10 @@ const MentorCreateTask = () => {
                       value={formData.due_date}
                       onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                       InputLabelProps={{ shrink: true }}
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField
                       fullWidth
                       label="Maximum Marks"
@@ -527,47 +439,22 @@ const MentorCreateTask = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, max_marks: parseInt(e.target.value) || 0 })
                       }
-                      inputProps={{ min: 1, max: 1000 }}
                       required
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                     />
                   </Grid>
 
-                  {/* Scheduling */}
                   <Grid item xs={12}>
-                    <Card
-                      elevation={0}
-                      sx={{
-                        p: 2,
-                        bgcolor: "#f5f7fa",
-                        border: `1px solid #e0e0e0`,
-                        borderRadius: 2,
-                      }}
-                    >
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.is_scheduled}
-                            onChange={(e) =>
-                              setFormData({ ...formData, is_scheduled: e.target.checked })
-                            }
-                            sx={{ color: BLUE }}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography variant="body2" fontWeight={600} sx={{ color: "#222" }}>
-                              Schedule Release Date
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {formData.is_scheduled
-                                ? "Task will be released on the scheduled date"
-                                : "Task will be immediately available"}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </Card>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.is_scheduled}
+                          onChange={(e) =>
+                            setFormData({ ...formData, is_scheduled: e.target.checked })
+                          }
+                        />
+                      }
+                      label="Schedule Release Date"
+                    />
                   </Grid>
 
                   {formData.is_scheduled && (
@@ -581,87 +468,12 @@ const MentorCreateTask = () => {
                           setFormData({ ...formData, release_date: e.target.value })
                         }
                         InputLabelProps={{ shrink: true }}
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                       />
                     </Grid>
                   )}
 
-                  <Grid item xs={12}>
-                    <Divider />
-                  </Grid>
+                  <Divider />
 
-                  {/* Preview */}
-                  {formData.title && (
-                    <Grid item xs={12}>
-                      <Typography variant="h6" sx={{ fontWeight: 700, color: "#222", mb: 2 }}>
-                        Preview
-                      </Typography>
-                      <Card
-                        elevation={0}
-                        sx={{
-                          p: 3,
-                          bgcolor: "#f5f7fa",
-                          border: `2px dashed ${BLUE}`,
-                          borderRadius: 2,
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          sx={{ fontWeight: 700, color: BLUE, mb: 1 }}
-                        >
-                          {formData.title}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="#555"
-                          sx={{ mb: 2, whiteSpace: "pre-wrap" }}
-                        >
-                          {formData.description || "No description"}
-                        </Typography>
-                        <Box display="flex" gap={1} flexWrap="wrap">
-                          <Chip
-                            label={`Week ${formData.week_number}`}
-                            size="small"
-                            sx={{ bgcolor: BLUE, color: "#fff", fontWeight: 700 }}
-                          />
-                          {formData.due_date && (
-                            <Chip
-                              icon={<CalendarToday sx={{ fontSize: 16 }} />}
-                              label={`Due: ${new Date(formData.due_date).toLocaleString()}`}
-                              size="small"
-                              sx={{ bgcolor: "#D84315", color: "#fff", fontWeight: 700 }}
-                            />
-                          )}
-                          <Chip
-                            icon={<Grade sx={{ fontSize: 16 }} />}
-                            label={`${formData.max_marks} Marks`}
-                            size="small"
-                            sx={{ bgcolor: "#0097A7", color: "#fff", fontWeight: 700 }}
-                          />
-                          {selectedBatch && (
-                            <Chip
-                              icon={<People sx={{ fontSize: 16 }} />}
-                              label={selectedBatch.name}
-                              size="small"
-                              sx={{ bgcolor: BLUE, color: "#fff", fontWeight: 700 }}
-                            />
-                          )}
-                          {!assignToAll && formData.assigned_to_ids.length > 0 && (
-                            <Chip
-                              icon={<AssignmentTurnedIn sx={{ fontSize: 16 }} />}
-                              label={`${formData.assigned_to_ids.length} student${
-                                formData.assigned_to_ids.length !== 1 ? "s" : ""
-                              }`}
-                              size="small"
-                              sx={{ bgcolor: "#43A047", color: "#fff", fontWeight: 700 }}
-                            />
-                          )}
-                        </Box>
-                      </Card>
-                    </Grid>
-                  )}
-
-                  {/* Submit Button */}
                   <Grid item xs={12}>
                     <Button
                       type="submit"
@@ -676,9 +488,6 @@ const MentorCreateTask = () => {
                         bgcolor: BLUE,
                         fontWeight: 700,
                         fontSize: "1rem",
-                        color: "#fff",
-                        "&:hover": { bgcolor: "#1565c0", transform: "scale(1.01)" },
-                        transition: "all 0.3s",
                       }}
                     >
                       {loading ? (

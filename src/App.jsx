@@ -22,6 +22,7 @@ import ManageBatches from './components/admin/ManageBatches';
 import CreateTask from './components/admin/CreateTask';
 import ManageUsers from './components/admin/ManageUsers';
 import ManageTasks from './components/admin/ManageTasks';
+import EditTask from './components/admin/EditTask';
 
 // Mentor Components
 import MentorDashboard from './components/mentor/MentorDashboard';
@@ -143,6 +144,14 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <ManageTasks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/edit-task/:id"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <EditTask />
             </ProtectedRoute>
           }
         />

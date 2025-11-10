@@ -399,7 +399,7 @@ const ManageBatches = () => {
           </Paper>
 
           {/* Message Alert */}
-          {message.text && (
+          {/* {message.text && (
             <Alert
               severity={message.type}
               sx={{ mb: 3, borderRadius: 2 }}
@@ -407,7 +407,7 @@ const ManageBatches = () => {
             >
               {message.text}
             </Alert>
-          )}
+          )} */}
 
           {/* Table Section */}
           <Paper

@@ -9,14 +9,12 @@ import {
   Grid,
   Alert,
   Box,
-  Avatar,
   IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Divider,
-  Badge,
   InputAdornment,
   CircularProgress,
 } from '@mui/material';
@@ -34,7 +32,6 @@ import {
   Menu as MenuIcon,
   Close,
   Save,
-  InfoOutlined,
 } from '@mui/icons-material';
 
 const BLUE = '#1976d2';
@@ -65,14 +62,13 @@ const CreateMentor = () => {
     { id: 'approvals', label: 'Approvals', icon: PersonAdd, path: '/admin/student-approval' },
   ];
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: '', text: '' });
+
     try {
       await API.post('/auth/create-mentor/', formData);
       setMessage({ type: 'success', text: 'Mentor created successfully!' });
@@ -171,8 +167,7 @@ const CreateMentor = () => {
   return (
     <Box sx={{ display: 'flex', bgcolor: LIGHT_GREY, minHeight: '100vh' }}>
       <Sidebar />
-      
-      {/* Main Content */}
+
       <Box
         sx={{
           flex: 1,
@@ -186,25 +181,17 @@ const CreateMentor = () => {
           px: 2,
         }}
       >
-        {/* Form Container */}
         <Box sx={{ width: '100%', maxWidth: '600px' }}>
-         
-
-          {/* Alert Message */}
           {message.text && (
             <Alert
               severity={message.type}
-              sx={{
-                mb: 3,
-                borderRadius: 3,
-              }}
+              sx={{ mb: 3, borderRadius: 3 }}
               onClose={() => setMessage({ type: '', text: '' })}
             >
               {message.text}
             </Alert>
           )}
 
-          {/* Form Card */}
           <Paper
             elevation={0}
             sx={{
@@ -217,10 +204,8 @@ const CreateMentor = () => {
           >
             <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={2.5}>
-                
-
-                {/* Row 1: First Name, Last Name, Phone */}
-                <Grid item xs={12} sm={4}>
+                {/* Each field in its own row */}
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="First Name"
@@ -235,15 +220,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Last Name"
@@ -258,15 +239,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Phone"
@@ -280,23 +257,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                {/* Divider */}
                 <Grid item xs={12}>
-                  <Divider sx={{ my: 1 }} />
-                </Grid>
-
-                
-
-                {/* Row 2: Username, Email, Password */}
-                <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Username"
@@ -311,15 +276,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -335,15 +296,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Password"
@@ -359,15 +316,11 @@ const CreateMentor = () => {
                         </InputAdornment>
                       ),
                     }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    }}
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                   />
                 </Grid>
 
-                {/* Action Buttons */}
+                {/* Buttons */}
                 <Grid item xs={12}>
                   <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
                     <Button
@@ -410,8 +363,6 @@ const CreateMentor = () => {
               </Grid>
             </Box>
           </Paper>
-
-          
         </Box>
       </Box>
     </Box>
